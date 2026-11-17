@@ -1,6 +1,7 @@
 // Initialize Lucide Icons
 lucide.createIcons();
 
+const STORAGE_KEY = 'pawtion_pet_profile_v1';
 let currentSpecies = 'cat';
 let lastAgeMonths = null;
 
@@ -24,6 +25,93 @@ const dogStages = [
   { id: 'dog_senior', label: 'สุนัขสูงวัย [DER = 1.2 x RER]', factor: 1.2 }
 ];
 
+// Save current form state to LocalStorage
+function saveToLocalStorage() {
+  try {
+    const stageSelect = document.getElementById('petStage');
+    const selectedOption = stageSelect.options[stageSelect.selectedIndex];
+
+    const data = {
+      species: currentSpecies,
+      healthConfirmed: document.getElementById('healthConfirmed').checked,
+      petName: document.getElementById('petName').value,
+      petWeight: document.getElementById('petWeight').value,
+      petAgeYears: document.getElementById('petAgeYears').value,
+      petAgeMonths: document.getElementById('petAgeMonths').value,
+      stageId: selectedOption ? selectedOption.dataset.id : '',
+      mainFoodRatio: document.getElementById('mainFoodRatio').value,
+      dryCal: document.getElementById('dryCal').value,
+      wetCal: document.getElementById('wetCal').value,
+      mealsPerDay: document.getElementById('mealsPerDay').value
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn('ไม่สามารถบันทึกข้อมูลลง LocalStorage ได้:', e);
+  }
+}
+
+// Load saved form state from LocalStorage
+function loadFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+
+    const data = JSON.parse(raw);
+
+    if (data.species === 'dog' || data.species === 'cat') {
+      currentSpecies = data.species;
+    }
+
+    if (typeof data.healthConfirmed === 'boolean') {
+      document.getElementById('healthConfirmed').checked = data.healthConfirmed;
+    }
+    if (data.petName !== undefined) document.getElementById('petName').value = data.petName;
+    if (data.petWeight !== undefined) document.getElementById('petWeight').value = data.petWeight;
+    if (data.petAgeYears !== undefined) document.getElementById('petAgeYears').value = data.petAgeYears;
+    if (data.petAgeMonths !== undefined) document.getElementById('petAgeMonths').value = data.petAgeMonths;
+    if (data.mainFoodRatio !== undefined) document.getElementById('mainFoodRatio').value = data.mainFoodRatio;
+    if (data.dryCal !== undefined) document.getElementById('dryCal').value = data.dryCal;
+    if (data.wetCal !== undefined) document.getElementById('wetCal').value = data.wetCal;
+    if (data.mealsPerDay !== undefined) document.getElementById('mealsPerDay').value = data.mealsPerDay;
+
+    // อัปเดต UI ปุ่มชนิดสัตว์และ Dropdown ช่วงวัย
+    updateSpeciesButtonsUI();
+    populateStages();
+
+    // ตั้งค่าช่วงวัยที่เคยบันทึกไว้ (ถ้ามี)
+    if (data.stageId) {
+      const stageSelect = document.getElementById('petStage');
+      const matched = Array.from(stageSelect.options).find(opt => opt.dataset.id === data.stageId);
+      if (matched) {
+        stageSelect.value = matched.value;
+      }
+    }
+
+    // บันทึกอายุปัจจุบันไว้ เพื่อไม่ให้ autoSelectStageByAge เขียนทับค่าที่โหลดมา
+    lastAgeMonths = getTotalAgeMonths();
+    updateFoodRatioLabel();
+    return true;
+  } catch (e) {
+    console.warn('ไม่สามารถโหลดข้อมูลจาก LocalStorage ได้:', e);
+    return false;
+  }
+}
+
+// Update Species Tab Button Styles
+function updateSpeciesButtonsUI() {
+  const btnCat = document.getElementById('btnCat');
+  const btnDog = document.getElementById('btnDog');
+
+  if (currentSpecies === 'cat') {
+    btnCat.className = 'py-2.5 px-4 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition tab-active';
+    btnDog.className = 'py-2.5 px-4 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition text-purple-700 hover:bg-purple-100/60';
+  } else {
+    btnDog.className = 'py-2.5 px-4 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition tab-active';
+    btnCat.className = 'py-2.5 px-4 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition text-purple-700 hover:bg-purple-100/60';
+  }
+}
+
 // Calculate total age in months
 function getTotalAgeMonths() {
   const years = parseInt(document.getElementById('petAgeYears').value) || 0;
@@ -35,7 +123,6 @@ function getTotalAgeMonths() {
 function autoSelectStageByAge(force = false) {
   const totalMonths = getTotalAgeMonths();
 
-  // อัปเดตเฉพาะตอนเปิดหน้าเว็บ, เปลี่ยนชนิดสัตว์ หรือมีการแก้ไขอายุเท่านั้น
   if (!force && totalMonths === lastAgeMonths) return;
   lastAgeMonths = totalMonths;
 
@@ -75,22 +162,13 @@ function updatePetNameDisplay() {
   const name = document.getElementById('petName').value.trim() || 'สัตว์เลี้ยงของคุณ';
   document.getElementById('lockPetName').textContent = name;
   document.getElementById('resPetName').textContent = name;
+  saveToLocalStorage();
 }
 
 // Switch between Cat & Dog
 function selectSpecies(species) {
   currentSpecies = species;
-  const btnCat = document.getElementById('btnCat');
-  const btnDog = document.getElementById('btnDog');
-
-  if (species === 'cat') {
-    btnCat.className = 'py-2.5 px-4 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition tab-active';
-    btnDog.className = 'py-2.5 px-4 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition text-purple-700 hover:bg-purple-100/60';
-  } else {
-    btnDog.className = 'py-2.5 px-4 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition tab-active';
-    btnCat.className = 'py-2.5 px-4 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition text-purple-700 hover:bg-purple-100/60';
-  }
-
+  updateSpeciesButtonsUI();
   populateStages();
   autoSelectStageByAge(true);
   calculatePortion();
@@ -121,8 +199,8 @@ function updateFoodRatioLabel() {
 
 // Main Calorie & Portion Calculation
 function calculatePortion() {
-  // ตรวจสอบและเลือกช่วงวัยอัตโนมัติหากมีการเปลี่ยนอายุ
   autoSelectStageByAge(false);
+  saveToLocalStorage();
 
   const isConfirmed = document.getElementById('healthConfirmed').checked;
   const notice = document.getElementById('unconfirmedNotice');
@@ -195,7 +273,10 @@ function calculatePortion() {
 }
 
 // Initial setup on page load
-populateStages();
-autoSelectStageByAge(true);
+const hasSavedData = loadFromLocalStorage();
+if (!hasSavedData) {
+  populateStages();
+  autoSelectStageByAge(true);
+}
 updatePetNameDisplay();
 calculatePortion();
