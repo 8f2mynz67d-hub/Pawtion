@@ -280,11 +280,17 @@
           </div>
         </div>
 
-        <!-- Meal Schedule Split -->
+        <!-- Meal Schedule Split + Copy for LINE Button -->
         <div class="bg-white p-5 rounded-3xl shadow-sm border border-purple-100 space-y-3">
-          <h3 class="font-bold text-purple-950 text-sm flex items-center gap-2">
-            <i data-lucide="clock" class="w-4 h-4 text-purple-600"></i> สรุปการแบ่งมื้ออาหาร (<span id="resMealCount">3</span> มื้อ/วัน)
-          </h3>
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="font-bold text-purple-950 text-sm flex items-center gap-2">
+              <i data-lucide="clock" class="w-4 h-4 text-purple-600"></i> แบ่งมื้ออาหาร (<span id="resMealCount">3</span> มื้อ/วัน)
+            </h3>
+            <button type="button" id="btnCopySingle" onclick="copySinglePetSummary(this)" class="text-xs bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition shadow-xs cursor-pointer">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              <span>คัดลอกส่ง LINE</span>
+            </button>
+          </div>
           <div class="p-3.5 bg-purple-50/50 rounded-2xl border border-purple-100 text-xs text-slate-600 space-y-1.5">
             <div class="flex justify-between">
               <span>อาหารแห้งต่อมื้อ:</span>
@@ -315,13 +321,14 @@
 
       <!-- Household Daily Total Summary Card (Shown when > 1 pet exists) -->
       <div id="householdSummaryCard" class="hidden bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white p-5 rounded-3xl shadow-md space-y-3.5">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
           <h3 class="font-bold text-sm flex items-center gap-2 text-yellow-200">
-            <i data-lucide="home" class="w-4 h-4 text-yellow-300"></i> ยอดรวมอาหารทั้งบ้าน
+            <i data-lucide="home" class="w-4 h-4 text-yellow-300"></i> ยอดรวมทั้งบ้าน (<span id="hhConfirmedCount">0</span>/<span id="hhTotalCount">0</span> ตัว)
           </h3>
-          <span class="text-[11px] bg-white/15 px-2.5 py-0.5 rounded-full text-purple-100 font-medium">
-            รวม <span id="hhConfirmedCount">0</span>/<span id="hhTotalCount">0</span> ตัว
-          </span>
+          <button type="button" id="btnCopyHousehold" onclick="copyHouseholdSummary(this)" class="text-xs bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition shadow-xs cursor-pointer">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>คัดลอกรวมทุกตัว</span>
+          </button>
         </div>
 
         <div class="grid grid-cols-2 gap-2.5">
@@ -356,6 +363,6 @@
   </main>
 
   <!-- Main Application Script -->
-  <script src="app.js?v=2.1"></script>
+  <script src="app.js?v=2.2"></script>
 </body>
 </html>
