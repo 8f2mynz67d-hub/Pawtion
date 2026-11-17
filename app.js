@@ -1,3 +1,79 @@
+// Generate real PNG App Icon & Web Manifest for iOS / Android Home Screen
+(function setupAppIconsAndManifest() {
+  try {
+    const size = 512;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // 1. Purple Gradient Background (Full square for iOS rounded mask)
+    const grad = ctx.createLinearGradient(0, 0, size, size);
+    grad.addColorStop(0, '#a855f7');
+    grad.addColorStop(1, '#7e22ce');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+
+    // 2. Yellow Paw Print (#fde047)
+    ctx.fillStyle = '#fde047';
+
+    // 3 Toe beans
+    const drawCircle = (x, y, r) => {
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    };
+    drawCircle(155, 195, 44);
+    drawCircle(256, 145, 46);
+    drawCircle(357, 195, 44);
+
+    // Main central pad
+    ctx.beginPath();
+    ctx.moveTo(256, 245);
+    ctx.bezierCurveTo(185, 245, 135, 295, 135, 345);
+    ctx.bezierCurveTo(135, 382, 166, 405, 202, 405);
+    ctx.bezierCurveTo(224, 405, 242, 394, 256, 394);
+    ctx.bezierCurveTo(270, 394, 288, 405, 310, 405);
+    ctx.bezierCurveTo(346, 405, 377, 382, 377, 345);
+    ctx.bezierCurveTo(377, 295, 327, 245, 256, 245);
+    ctx.closePath();
+    ctx.fill();
+
+    // Export as real PNG Data URL
+    const pngDataUrl = canvas.toDataURL('image/png');
+
+    const favicon = document.getElementById('faviconLink');
+    const appleIcon = document.getElementById('appleTouchIconLink');
+    if (favicon) favicon.href = pngDataUrl;
+    if (appleIcon) appleIcon.href = pngDataUrl;
+
+    // 3. Dynamic Web App Manifest for Android Chrome
+    const manifestObj = {
+      name: 'Pawtion - คำนวณปริมาณอาหารสัตว์เลี้ยง',
+      short_name: 'Pawtion',
+      start_url: window.location.href.split('?')[0],
+      display: 'standalone',
+      background_color: '#faf5ff',
+      theme_color: '#9333ea',
+      icons: [
+        {
+          src: pngDataUrl,
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'any maskable'
+        }
+      ]
+    };
+
+    const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: 'application/manifest+json' });
+    const manifestUrl = URL.createObjectURL(manifestBlob);
+    const manifestLink = document.getElementById('manifestLink');
+    if (manifestLink) manifestLink.href = manifestUrl;
+  } catch (e) {
+    console.warn('ไม่สามารถสร้างไอคอน PNG อัตโนมัติได้:', e);
+  }
+})();
+
 // Initialize Lucide Icons
 lucide.createIcons();
 
