@@ -32,7 +32,7 @@ const dogStages = [
   { id: 'dog_senior', label: 'สุนัขสูงวัย', factor: 1.2 }
 ];
 
-// Create a default pet profile object
+// Create a default pet profile object (including treat proximate analysis defaults)
 function createDefaultPet(customName = 'น้องม่อน') {
   return {
     id: 'pet_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
@@ -46,7 +46,13 @@ function createDefaultPet(customName = 'น้องม่อน') {
     mainFoodRatio: '70',
     dryCal: '3.8',
     wetCal: '0.85',
-    mealsPerDay: '3'
+    mealsPerDay: '3',
+    treatProtein: '25',
+    treatFat: '10',
+    treatFiber: '3',
+    treatMoisture: '12',
+    treatBagWeight: '60',
+    treatBagPieces: '30'
   };
 }
 
@@ -127,6 +133,14 @@ function syncCurrentFormToActivePet() {
   activePet.wetCal = document.getElementById('wetCal').value;
   activePet.mealsPerDay = document.getElementById('mealsPerDay').value;
 
+  // Treat proximate analysis fields
+  activePet.treatProtein = document.getElementById('treatProtein').value;
+  activePet.treatFat = document.getElementById('treatFat').value;
+  activePet.treatFiber = document.getElementById('treatFiber').value;
+  activePet.treatMoisture = document.getElementById('treatMoisture').value;
+  activePet.treatBagWeight = document.getElementById('treatBagWeight').value;
+  activePet.treatBagPieces = document.getElementById('treatBagPieces').value;
+
   saveStore();
   renderProfileChips();
   updateHouseholdSummary();
@@ -150,6 +164,14 @@ function loadPetIntoForm(petId) {
   document.getElementById('dryCal').value = pet.dryCal ?? '3.8';
   document.getElementById('wetCal').value = pet.wetCal ?? '0.85';
   document.getElementById('mealsPerDay').value = pet.mealsPerDay ?? '3';
+
+  // Load treat proximate analysis values (fallback to defaults for older saved profiles)
+  document.getElementById('treatProtein').value = pet.treatProtein ?? '25';
+  document.getElementById('treatFat').value = pet.treatFat ?? '10';
+  document.getElementById('treatFiber').value = pet.treatFiber ?? '3';
+  document.getElementById('treatMoisture').value = pet.treatMoisture ?? '12';
+  document.getElementById('treatBagWeight').value = pet.treatBagWeight ?? '60';
+  document.getElementById('treatBagPieces').value = pet.treatBagPieces ?? '30';
 
   updateSpeciesButtonsUI();
   populateStages();
@@ -252,11 +274,51 @@ function escapeHTML(str) {
   }[match]));
 }
 
+// Calculate Treat Metrics from Proximate Analysis (Modified Atwater Factors)
+function calculateTreatMetrics(pet, treatCalQuota) {
+  const protein = Math.max(0, parseFloat(pet.treatProtein) || 0);
+  const fat = Math.max(0, parseFloat(pet.treatFat) || 0);
+  const fiber = Math.max(0, parseFloat(pet.treatFiber) || 0);
+  const moisture = Math.max(0, parseFloat(pet.treatMoisture) || 0);
+
+  // Estimate Ash (~6% for dry/semi-moist treats, ~2% if high moisture > 60%)
+  const ash = moisture > 60 ? 2 : 6;
+  const nfe = Math.max(0, 100 - (protein + fat + fiber + moisture + ash));
+
+  // Modified Atwater: Protein 3.5 kcal/g, Fat 8.5 kcal/g, NFE 3.5 kcal/g
+  const kcalPer100g = (protein * 3.5) + (fat * 8.5) + (nfe * 3.5);
+  const kcalPerGram = kcalPer100g / 100;
+
+  const maxGrams = kcalPerGram > 0 ? (treatCalQuota / kcalPerGram) : 0;
+
+  const bagWeight = parseFloat(pet.treatBagWeight) || 0;
+  const bagPieces = parseFloat(pet.treatBagPieces) || 0;
+
+  let maxPieces = 0;
+  if (bagWeight > 0 && bagPieces > 0) {
+    const gramsPerPiece = bagWeight / bagPieces;
+    maxPieces = gramsPerPiece > 0 ? (maxGrams / gramsPerPiece) : 0;
+  }
+
+  return {
+    kcalPer100g,
+    kcalPerGram,
+    maxGrams,
+    maxPieces,
+    hasPieces: bagWeight > 0 && bagPieces > 0
+  };
+}
+
 // Calculate daily nutrition metrics for any pet profile object
 function calculatePetMetrics(pet) {
   const weight = parseFloat(pet.petWeight) || 0;
   if (weight <= 0) {
-    return { rer: 0, der: 0, mainFoodCal: 0, treatCal: 0, dryCal: 0, wetCal: 0, dryGrams: 0, wetGrams: 0, dryPerMeal: 0, wetPerMeal: 0, waterMl: 0 };
+    return {
+      rer: 0, der: 0, mainFoodCal: 0, treatCal: 0,
+      dryCal: 0, wetCal: 0, dryGrams: 0, wetGrams: 0,
+      dryPerMeal: 0, wetPerMeal: 0, waterMl: 0,
+      treat: { kcalPer100g: 0, kcalPerGram: 0, maxGrams: 0, maxPieces: 0, hasPieces: false }
+    };
   }
 
   const stageList = pet.species === 'dog' ? dogStages : catStages;
@@ -288,6 +350,8 @@ function calculatePetMetrics(pet) {
   const waterFactor = pet.species === 'cat' ? 50 : 60;
   const waterMl = weight * waterFactor;
 
+  const treat = calculateTreatMetrics(pet, treatCal);
+
   return {
     rer,
     der,
@@ -299,7 +363,8 @@ function calculatePetMetrics(pet) {
     wetGrams,
     dryPerMeal,
     wetPerMeal,
-    waterMl
+    waterMl,
+    treat
   };
 }
 
@@ -347,6 +412,18 @@ function fallbackCopyText(text, onSuccess) {
   document.body.removeChild(textarea);
 }
 
+// Format treat quota string for LINE messages
+function formatTreatAllowanceForLine(metrics) {
+  const t = metrics.treat;
+  const calText = `ไม่เกิน ${Math.round(metrics.treatCal)} kcal/วัน`;
+  if (t.kcalPerGram <= 0) return calText;
+
+  if (t.hasPieces) {
+    return `${calText} (ประมาณ ${t.maxPieces.toFixed(1)} ชิ้น หรือ ${t.maxGrams.toFixed(1)} g)`;
+  }
+  return `${calText} (ประมาณ ${t.maxGrams.toFixed(1)} g)`;
+}
+
 // Copy Single Active Pet Summary formatted for LINE
 function copySinglePetSummary(btnElement) {
   const pet = getActivePet();
@@ -363,7 +440,7 @@ function copySinglePetSummary(btnElement) {
     `• แบ่ง ${meals} มื้อ/วัน (ตวงต่อมื้อ):`,
     `  - อาหารเม็ด: ${metrics.dryPerMeal.toFixed(1)} g (รวม ${metrics.dryGrams.toFixed(1)} g/วัน)`,
     `  - อาหารเปียก: ${metrics.wetPerMeal.toFixed(1)} g (รวม ${metrics.wetGrams.toFixed(1)} g/วัน)`,
-    `• โควต้าขนม: ไม่เกิน ${Math.round(metrics.treatCal)} kcal/วัน`,
+    `• โควต้าขนม: ${formatTreatAllowanceForLine(metrics)}`,
     `• น้ำดื่มแนะนำ: ~${Math.round(metrics.waterMl)} ml/วัน`
   ];
 
@@ -392,7 +469,8 @@ function copyHouseholdSummary(btnElement) {
     lines.push(
       `\n${emoji} ${name} (${meals} มื้อ/วัน)`,
       `  - ต่อมื้อ: เม็ด ${m.dryPerMeal.toFixed(1)} g | เปียก ${m.wetPerMeal.toFixed(1)} g`,
-      `  - ทั้งวัน: เม็ด ${m.dryGrams.toFixed(1)} g | เปียก ${m.wetGrams.toFixed(1)} g (ขนม ≤ ${Math.round(m.treatCal)} kcal)`
+      `  - ทั้งวัน: เม็ด ${m.dryGrams.toFixed(1)} g | เปียก ${m.wetGrams.toFixed(1)} g`,
+      `  - ขนม: ${formatTreatAllowanceForLine(m)}`
     );
   });
 
@@ -583,6 +661,19 @@ function calculatePortion(shouldSave = true) {
   document.getElementById('resWetGram').textContent = metrics.wetGrams.toFixed(1);
 
   document.getElementById('resTreatMaxCal').textContent = Math.round(metrics.treatCal);
+
+  // Render Treat Proximate Calculation
+  const t = metrics.treat;
+  document.getElementById('treatCalPer100g').textContent = Math.round(t.kcalPer100g);
+
+  const allowanceEl = document.getElementById('treatMaxAllowanceText');
+  if (t.kcalPerGram <= 0) {
+    allowanceEl.textContent = 'กรุณากรอกค่าสารอาหาร %';
+  } else if (t.hasPieces) {
+    allowanceEl.textContent = `${t.maxPieces.toFixed(1)} ชิ้น (${t.maxGrams.toFixed(1)} g) / วัน`;
+  } else {
+    allowanceEl.textContent = `${t.maxGrams.toFixed(1)} g / วัน`;
+  }
 
   document.getElementById('resMealCount').textContent = meals;
   document.getElementById('resDryPerMeal').textContent = metrics.dryPerMeal.toFixed(1);
