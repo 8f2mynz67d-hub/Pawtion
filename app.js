@@ -12,24 +12,24 @@ let petStore = {
 let currentSpecies = 'cat';
 let lastAgeMonths = null;
 
-// Life Stage Multipliers (DER Factors)
+// Life Stage Multipliers (Clean user-friendly labels without DER/RER formulas)
 const catStages = [
-  { id: 'cat_kitten', label: 'ลูกแมว (อายุต่ำกว่า 1 ปี) [DER = 2.5 x RER]', factor: 2.5 },
-  { id: 'cat_neutered', label: 'แมวโตทำหมันแล้ว (กิจกรรมปกติ) [DER = 1.2 x RER]', factor: 1.2 },
-  { id: 'cat_intact', label: 'แมวโตยังไม่ทำหมัน [DER = 1.4 x RER]', factor: 1.4 },
-  { id: 'cat_weight_loss', label: 'แมวโตลดน้ำหนัก / กิจกรรมน้อย [DER = 1.0 x RER]', factor: 1.0 },
-  { id: 'cat_senior', label: 'แมวสูงวัย (7 ปีขึ้นไป) [DER = 1.1 x RER]', factor: 1.1 },
-  { id: 'cat_pregnant', label: 'แมวตั้งท้อง / ให้นมลูก [DER = 2.0 x RER]', factor: 2.0 }
+  { id: 'cat_kitten', label: 'ลูกแมว (อายุต่ำกว่า 1 ปี)', factor: 2.5 },
+  { id: 'cat_neutered', label: 'แมวโตทำหมันแล้ว (กิจกรรมปกติ)', factor: 1.2 },
+  { id: 'cat_intact', label: 'แมวโตยังไม่ทำหมัน', factor: 1.4 },
+  { id: 'cat_weight_loss', label: 'แมวโตลดน้ำหนัก / กิจกรรมน้อย', factor: 1.0 },
+  { id: 'cat_senior', label: 'แมวสูงวัย (7 ปีขึ้นไป)', factor: 1.1 },
+  { id: 'cat_pregnant', label: 'แมวตั้งท้อง / ให้นมลูก', factor: 2.0 }
 ];
 
 const dogStages = [
-  { id: 'dog_puppy_4m', label: 'ลูกสุนัข (อายุต่ำกว่า 4 เดือน) [DER = 3.0 x RER]', factor: 3.0 },
-  { id: 'dog_puppy_4m_plus', label: 'ลูกสุนัข (อายุ 4 เดือน - 1 ปี) [DER = 2.0 x RER]', factor: 2.0 },
-  { id: 'dog_neutered', label: 'สุนัขโตทำหมันแล้ว [DER = 1.6 x RER]', factor: 1.6 },
-  { id: 'dog_intact', label: 'สุนัขโตยังไม่ทำหมัน [DER = 1.8 x RER]', factor: 1.8 },
-  { id: 'dog_active', label: 'สุนัขแอคทีฟ / ออกกำลังกายเยอะ [DER = 2.0 x RER]', factor: 2.0 },
-  { id: 'dog_weight_loss', label: 'สุนัขลดน้ำหนัก [DER = 1.0 x RER]', factor: 1.0 },
-  { id: 'dog_senior', label: 'สุนัขสูงวัย [DER = 1.2 x RER]', factor: 1.2 }
+  { id: 'dog_puppy_4m', label: 'ลูกสุนัข (อายุต่ำกว่า 4 เดือน)', factor: 3.0 },
+  { id: 'dog_puppy_4m_plus', label: 'ลูกสุนัข (อายุ 4 เดือน - 1 ปี)', factor: 2.0 },
+  { id: 'dog_neutered', label: 'สุนัขโตทำหมันแล้ว', factor: 1.6 },
+  { id: 'dog_intact', label: 'สุนัขโตยังไม่ทำหมัน', factor: 1.8 },
+  { id: 'dog_active', label: 'สุนัขแอคทีฟ / ออกกำลังกายเยอะ', factor: 2.0 },
+  { id: 'dog_weight_loss', label: 'สุนัขลดน้ำหนัก', factor: 1.0 },
+  { id: 'dog_senior', label: 'สุนัขสูงวัย', factor: 1.2 }
 ];
 
 // Create a default pet profile object
@@ -572,8 +572,7 @@ function calculatePortion(shouldSave = true) {
   const meals = parseInt(document.getElementById('mealsPerDay').value) || 3;
 
   // Render UI
-  document.getElementById('resRER').textContent = Math.round(metrics.rer);
-  document.getElementById('resDER').textContent = Math.round(metrics.der);
+  document.getElementById('resDER').textContent = Math.round(metrics.rer ? metrics.der : 0);
   document.getElementById('resMainCal').textContent = Math.round(metrics.mainFoodCal);
   document.getElementById('resTreatCal').textContent = Math.round(metrics.treatCal);
 
