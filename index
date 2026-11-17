@@ -1,666 +1,466 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pawtion - Pet Calorie & Portion Calculator</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts: Prompt & Mitr -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pawtion - คำนวณปริมาณอาหารสัตว์เลี้ยง</title>
+  
+  <!-- รองรับการเพิ่มลงหน้าจอโฮมมือถือ (PWA / Web App) -->
+  <meta name="theme-color" content="#a855f7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Pawtion">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%239333ea'/%3E%3Ccircle cx='32' cy='38' r='9' fill='%23fde047'/%3E%3Ccircle cx='50' cy='28' r='9' fill='%23fde047'/%3E%3Ccircle cx='68' cy='38' r='9' fill='%23fde047'/%3E%3Cpath d='M50 48c-14 0-24 10-24 20 0 7 6 12 13 12 4 0 8-2 11-2s7 2 11 2c7 0 13-5 13-12 0-10-10-20-24-20z' fill='%23fde047'/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%239333ea'/%3E%3Ccircle cx='32' cy='38' r='9' fill='%23fde047'/%3E%3Ccircle cx='50' cy='28' r='9' fill='%23fde047'/%3E%3Ccircle cx='68' cy='38' r='9' fill='%23fde047'/%3E%3Cpath d='M50 48c-14 0-24 10-24 20 0 7 6 12 13 12 4 0 8-2 11-2s7 2 11 2c7 0 13-5 13-12 0-10-10-20-24-20z' fill='%23fde047'/%3E%3C/svg%3E">
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        pawtion: {
-                            purple: '#9B87E8',
-                            purpleDark: '#7C65D6',
-                            purpleLight: '#F3EFFE',
-                            purpleBorder: '#E0D7FC',
-                            yellow: '#F9D976',
-                            yellowHover: '#F7CE51',
-                            yellowLight: '#FFF9E6',
-                            yellowBorder: '#FDEAA6',
-                            textDark: '#3A334B',
-                            dogBlue: '#6C9BF1',
-                            dogLightBlue: '#EEF4FF',
-                            treatPink: '#FF8DB3'
-                        }
-                    },
-                    fontFamily: {
-                        prompt: ['Prompt', 'sans-serif'],
-                        mitr: ['Mitr', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            font-family: 'Prompt', sans-serif;
-            background-color: #F8F5FF;
-            color: #3A334B;
-        }
-        h1, h2, h3, h4, .font-title {
-            font-family: 'Mitr', sans-serif;
-        }
-        .custom-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            background: #9B87E8;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(155, 135, 232, 0.4);
-            transition: transform 0.1s ease;
-        }
-        .custom-slider::-webkit-slider-thumb:hover {
-            transform: scale(1.15);
-        }
-        .avatar-option.selected {
-            border-color: #9B87E8;
-            background-color: #F3EFFE;
-            transform: scale(1.05);
-        }
-        .species-btn.active-cat {
-            background-color: #9B87E8;
-            color: white;
-            border-color: #9B87E8;
-            box-shadow: 0 4px 12px rgba(155, 135, 232, 0.35);
-        }
-        .species-btn.active-dog {
-            background-color: #6C9BF1;
-            color: white;
-            border-color: #6C9BF1;
-            box-shadow: 0 4px 12px rgba(108, 155, 241, 0.35);
-        }
-    </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { 
+      font-family: 'Prompt', sans-serif; 
+      background-color: #faf5ff;
+      background-image: radial-gradient(#f3e8ff 1px, transparent 1px), radial-gradient(#fef9c3 1px, #faf5ff 1px);
+      background-size: 40px 40px;
+      background-position: 0 0, 20px 20px;
+    }
+    .tab-active {
+      background: linear-gradient(135deg, #9333ea 0%, #a855f7 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #9333ea;
+      border: 3px solid #fef08a;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(147, 51, 234, 0.35);
+    }
+  </style>
 </head>
-<body class="min-h-screen pb-12">
+<body class="min-h-screen text-slate-800 pb-14">
 
-    <!-- Header / Navbar -->
-    <header class="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-purple-100 shadow-sm">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div id="brandLogoBg" class="w-10 h-10 rounded-2xl bg-pawtion-purple flex items-center justify-center text-white text-xl shadow-md transition-colors duration-300">
-                    <i id="brandLogoIcon" class="fa-solid fa-paw text-pawtion-yellow"></i>
+  <!-- Header -->
+  <header class="bg-white/90 backdrop-blur-md border-b border-purple-100 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-yellow-200 p-2 rounded-2xl shadow-md shadow-purple-200">
+          <i data-lucide="paw-print" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-purple-900 tracking-tight leading-none">Pawtion</h1>
+          <p class="text-xs text-purple-500 font-medium mt-0.5">Smart Pet Calorie & Portion</p>
+        </div>
+      </div>
+      <div class="bg-yellow-100/90 border border-yellow-200 text-purple-900 text-xs px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5 shadow-sm">
+        <i data-lucide="shield-check" class="w-4 h-4 text-purple-600"></i>
+        <span>สำหรับสัตว์เลี้ยงสุขภาพดี</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 mt-6 grid grid-cols-1 md:grid-cols-12 gap-6">
+
+    <!-- Left Column: Inputs -->
+    <div class="md:col-span-7 space-y-6">
+
+      <!-- Healthy Pet Disclaimer / Confirmation Box -->
+      <div class="bg-white p-5 rounded-3xl shadow-sm border border-purple-100 relative overflow-hidden">
+        <div class="absolute -right-4 -bottom-4 text-purple-100 opacity-60 pointer-events-none">
+          <i data-lucide="heart-pulse" class="w-28 h-28"></i>
+        </div>
+        <div class="relative z-10 space-y-3">
+          <div class="flex items-start gap-3">
+            <div class="p-2 bg-yellow-100 text-purple-700 rounded-xl mt-0.5 shrink-0">
+              <i data-lucide="alert-circle" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="font-semibold text-purple-950 text-sm">ข้อตกลงและการยืนยันสุขภาพสัตว์เลี้ยง</h3>
+              <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                สูตรคำนวณในโปรแกรมนี้ออกแบบมาสำหรับ<b class="text-purple-700">สัตว์เลี้ยงที่มีสุขภาพดีปกติเท่านั้น</b> หากน้องแมวหรือสุนัขมีโรคประจำตัว (เช่น โรคไต เบาหวาน โรคตับ หรืออยู่ในช่วงพักฟื้น) ควรปรึกษาสัตวแพทย์เพื่อกำหนดปริมาณอาหารเฉพาะโรค
+              </p>
+            </div>
+          </div>
+          <label class="flex items-center gap-2.5 p-3 bg-yellow-50/90 rounded-2xl border border-yellow-200/80 cursor-pointer transition hover:bg-yellow-100/70">
+            <input type="checkbox" id="healthConfirmed" class="w-4 h-4 accent-purple-600 rounded border-purple-300 cursor-pointer" onchange="calculatePortion()">
+            <span class="text-xs font-semibold text-purple-900">ยืนยันว่าสัตว์เลี้ยงมีสุขภาพดีปกติ และรับทราบเงื่อนไขดังกล่าว</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Main Form -->
+      <div class="bg-white p-6 rounded-3xl shadow-sm border border-purple-100 space-y-5">
+        
+        <!-- Species Selector -->
+        <div>
+          <label class="block text-xs font-semibold text-purple-700 mb-2 uppercase tracking-wider">ชนิดสัตว์เลี้ยง</label>
+          <div class="grid grid-cols-2 gap-2.5 p-1.5 bg-purple-50/80 rounded-2xl border border-purple-100">
+            <button type="button" id="btnCat" onclick="selectSpecies('cat')" class="py-2.5 px-4 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition tab-active">
+              <i data-lucide="cat" class="w-5 h-5"></i> แมว (Cat)
+            </button>
+            <button type="button" id="btnDog" onclick="selectSpecies('dog')" class="py-2.5 px-4 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition text-purple-700 hover:bg-purple-100/60">
+              <i data-lucide="dog" class="w-5 h-5"></i> สุนัข (Dog)
+            </button>
+          </div>
+        </div>
+
+        <!-- Name & Weight & Age -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">ชื่อสัตว์เลี้ยง</label>
+            <input type="text" id="petName" value="น้องม่อน" oninput="updatePetNameDisplay()" class="w-full px-3.5 py-2.5 rounded-2xl border border-purple-100 bg-purple-50/30 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-200 outline-none text-sm font-medium">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">น้ำหนักตัว (กก.)</label>
+            <input type="number" id="petWeight" value="4.5" step="0.1" min="0.1" class="w-full px-3.5 py-2.5 rounded-2xl border border-purple-100 bg-purple-50/30 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-200 outline-none text-sm font-medium" oninput="calculatePortion()">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">อายุ (ปี / เดือน)</label>
+            <div class="grid grid-cols-2 gap-1.5">
+              <input type="number" id="petAgeYears" value="2" min="0" placeholder="ปี" class="w-full px-2.5 py-2.5 rounded-2xl border border-purple-100 bg-purple-50/30 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-200 outline-none text-xs font-medium text-center" oninput="calculatePortion()">
+              <input type="number" id="petAgeMonths" value="0" min="0" max="11" placeholder="เดือน" class="w-full px-2.5 py-2.5 rounded-2xl border border-purple-100 bg-purple-50/30 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-200 outline-none text-xs font-medium text-center" oninput="calculatePortion()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Life Stage Status -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">ช่วงวัยและระดับกิจกรรม</label>
+          <select id="petStage" class="w-full px-3.5 py-2.5 rounded-2xl border border-purple-100 bg-purple-50/30 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-200 outline-none text-sm font-medium" onchange="calculatePortion()">
+          </select>
+        </div>
+
+        <hr class="border-purple-50">
+
+        <!-- Calorie Split Rule 90% Main / 10% Treats -->
+        <div class="bg-gradient-to-br from-purple-50/90 to-yellow-50/80 p-4 rounded-2xl border border-purple-100 space-y-3">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <span class="text-xs font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="pie-chart" class="w-4 h-4 text-purple-600"></i> สัดส่วนแคลอรีประจำวัน
+            </span>
+            <span class="text-xs bg-yellow-200 text-purple-900 font-bold px-2.5 py-0.5 rounded-full shadow-xs">กฎโภชนาการ 90 / 10</span>
+          </div>
+          <p class="text-xs text-slate-600">
+            อาหารหลัก (แห้ง/เปียก) คิดเป็น <b class="text-purple-700">90%</b> และโควต้าขนมคิดเป็น <b class="text-amber-600">10%</b> ของพลังงานรวมทั้งหมดต่อวัน
+          </p>
+          
+          <!-- Slider Main Food vs Wet Food Ratio -->
+          <div class="pt-2">
+            <div class="flex justify-between text-xs font-semibold mb-2">
+              <span class="text-purple-700">อาหารแห้ง (Dry): <b id="dryRatioVal">70%</b></span>
+              <span class="text-amber-600">อาหารเปียก (Wet): <b id="wetRatioVal">30%</b></span>
+            </div>
+            <input type="range" id="mainFoodRatio" min="0" max="100" value="70" class="w-full h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer" oninput="updateFoodRatioLabel(); calculatePortion();">
+            <p class="text-[11px] text-slate-500 mt-1.5">*เลื่อนปรับสัดส่วนระหว่างอาหารเม็ดและอาหารเปียกภายในโควต้าอาหารหลัก 90%</p>
+          </div>
+        </div>
+
+        <!-- Food Calorie Densities -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 mb-1">อาหารแห้ง (kcal/g)</label>
+            <input type="number" id="dryCal" value="3.8" step="0.1" min="0.1" class="w-full px-3 py-2 rounded-xl border border-purple-100 bg-purple-50/30 focus:bg-white focus:border-purple-400 outline-none text-xs font-medium" oninput="calculatePortion()">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 mb-1">อาหารเปียก (kcal/g)</label>
+            <input type="number" id="wetCal" value="0.85" step="0.05" min="0.1" class="w-full px-3 py-2 rounded-xl border border-purple-100 bg-purple-50/30 focus:bg-white focus:border-purple-400 outline-none text-xs font-medium" oninput="calculatePortion()">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 mb-1">จำนวนมื้อ / วัน</label>
+            <select id="mealsPerDay" class="w-full px-3 py-2 rounded-xl border border-purple-100 bg-purple-50/30 focus:bg-white focus:border-purple-400 outline-none text-xs font-medium" onchange="calculatePortion()">
+              <option value="2">2 มื้อ</option>
+              <option value="3" selected>3 มื้อ</option>
+              <option value="4">4 มื้อ</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Right Column: Results -->
+    <div class="md:col-span-5 space-y-5">
+      
+      <!-- Lock Overlay if unconfirmed -->
+      <div id="unconfirmedNotice" class="bg-white border-2 border-dashed border-purple-200 p-7 rounded-3xl text-center space-y-3 shadow-sm">
+        <div class="w-14 h-14 bg-yellow-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto shadow-xs">
+          <i data-lucide="lock" class="w-7 h-7"></i>
+        </div>
+        <h4 class="font-bold text-purple-950 text-sm">กรุณากดยืนยันสุขภาพสัตว์เลี้ยง</h4>
+        <p class="text-xs text-slate-500 leading-relaxed">ติ๊กช่องยืนยันว่า <span id="lockPetName" class="font-semibold text-purple-700">น้องม่อน</span> มีสุขภาพดีปกติในกล่องด้านซ้ายมือ เพื่อแสดงผลการคำนวณแคลอรีและปริมาณอาหาร</p>
+      </div>
+
+      <!-- Result Card -->
+      <div id="resultCard" class="hidden space-y-5">
+
+        <!-- Total Energy Banner -->
+        <div class="bg-gradient-to-br from-purple-600 via-purple-500 to-indigo-500 text-white p-6 rounded-3xl shadow-lg shadow-purple-200/70 space-y-4 relative overflow-hidden">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-xs font-medium text-purple-100 uppercase tracking-wider">แคลอรีรวมต่อวันของ <span id="resPetName" class="text-yellow-200 font-bold">น้องม่อน</span></p>
+              <h2 class="text-3xl font-extrabold mt-1 text-yellow-200"><span id="resDER">0</span> <span class="text-base font-semibold text-white">kcal/วัน</span></h2>
+            </div>
+            <span class="bg-white/15 text-yellow-100 text-xs px-2.5 py-1 rounded-full border border-white/20 font-medium">RER: <span id="resRER">0</span></span>
+          </div>
+
+          <!-- Breakdown 90/10 -->
+          <div class="grid grid-cols-2 gap-2.5 pt-2 border-t border-white/15 text-xs">
+            <div class="bg-white/15 p-3 rounded-2xl backdrop-blur-xs">
+              <p class="text-purple-100">อาหารหลัก (90%)</p>
+              <p class="font-bold text-sm mt-0.5 text-white"><span id="resMainCal">0</span> kcal</p>
+            </div>
+            <div class="bg-yellow-300/20 border border-yellow-200/30 p-3 rounded-2xl backdrop-blur-xs">
+              <p class="text-yellow-100">โควต้าขนม (10%)</p>
+              <p class="font-bold text-sm mt-0.5 text-yellow-200"><span id="resTreatCal">0</span> kcal</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Portion Breakdown -->
+        <div class="bg-white p-5 rounded-3xl shadow-sm border border-purple-100 space-y-4">
+          <h3 class="font-bold text-purple-950 text-sm flex items-center gap-2">
+            <i data-lucide="utensils" class="w-4 h-4 text-purple-600"></i> ปริมาณอาหารแนะนำต่อวัน
+          </h3>
+
+          <div class="space-y-3">
+            <!-- Dry Food Portion -->
+            <div class="flex items-center justify-between p-3.5 bg-purple-50/70 rounded-2xl border border-purple-100">
+              <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-purple-100 text-purple-700 rounded-xl">
+                  <i data-lucide="cookie" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-bold text-pawtion-textDark tracking-tight leading-none">Pawtion</h1>
-                    <p class="text-[11px] text-pawtion-purpleDark font-medium">Pet Calorie & Portion Calculator</p>
+                  <p class="font-semibold text-xs text-purple-950">อาหารแห้ง (เม็ด)</p>
+                  <p class="text-[11px] text-slate-500"><span id="resDryCal">0</span> kcal/วัน</p>
                 </div>
-            </div>
-            
-            <div class="flex items-center gap-2">
-                <span class="text-xs px-2.5 py-1 rounded-full bg-purple-50 text-pawtion-purpleDark border border-pawtion-purpleBorder font-medium">
-                    <i class="fa-solid fa-shield-heart text-pawtion-purple mr-1"></i> สำหรับสัตว์เลี้ยงสุขภาพดี
-                </span>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Container -->
-    <main class="max-w-4xl mx-auto px-4 pt-6 space-y-6">
-
-        <!-- Banner -->
-        <section id="heroBanner" class="bg-gradient-to-r from-pawtion-purple to-purple-400 text-white rounded-3xl p-6 shadow-lg relative overflow-hidden transition-all duration-300">
-            <div class="relative z-10 max-w-lg">
-                <div class="inline-flex items-center gap-1.5 bg-pawtion-yellow text-pawtion-textDark text-xs px-3 py-1 rounded-full font-bold shadow-sm mb-2">
-                    <i class="fa-solid fa-scale-balanced"></i> กฏโภชนาการ 90/10 (อาหารหลัก 90% + ขนม 10%)
-                </div>
-                <h2 class="text-2xl md:text-3xl font-bold mb-2">คำนวณมื้ออร่อย พอดีเป๊ะให้เพื่อนสี่ขา 🐾</h2>
-                <p class="text-purple-100 text-xs md:text-sm leading-relaxed">
-                    เพราะสุขภาพที่ดีเริ่มจากปริมาณอาหารที่ถูกต้อง คำนวณพลังงาน (DER) สำหรับแมวและสุนัขสุขภาพดี เพื่อหุ่นสมส่วนและอายุยืนยาว
-                </p>
-            </div>
-            <div class="absolute -right-6 -bottom-8 opacity-20 text-9xl text-white pointer-events-none">
-                <i id="bannerBgIcon" class="fa-solid fa-cat"></i>
-            </div>
-        </section>
-
-        <!-- Healthy Pet Confirmation Box (Mandatory Checkbox) -->
-        <section class="bg-pawtion-yellowLight border-2 border-pawtion-yellowBorder rounded-2xl p-4 shadow-sm space-y-2">
-            <div class="flex items-start gap-3">
-                <input type="checkbox" id="healthConfirm" onchange="toggleHealthConfirmation()" 
-                    class="mt-1 w-5 h-5 text-pawtion-purple rounded border-purple-300 focus:ring-pawtion-purple cursor-pointer">
-                <label for="healthConfirm" class="text-xs sm:text-sm text-pawtion-textDark cursor-pointer leading-relaxed">
-                    <span class="font-bold text-amber-900">ยืนยันข้อมูลสุขภาพสัตว์เลี้ยง:</span> 
-                    ฉันยืนยันว่าสัตว์เลี้ยงตัวนี้<span class="font-bold underline text-pawtion-purpleDark">มีสุขภาพแข็งแรงดี</span> ไม่อยู่ระหว่างการรักษาโรคเรื้อรัง (เช่น โรคไต, โรคเบาหวาน, โรคตับ หรือโรคหัวใจ) ซึ่งต้องการอาหารเฉพาะทางทางการแพทย์
-                </label>
-            </div>
-            <p id="healthWarning" class="text-[11px] text-purple-600 font-medium pl-8">
-                * กรุณาทำเครื่องหมายยืนยัน เพื่อปลดล็อกการคำนวณปริมาณอาหาร
-            </p>
-        </section>
-
-        <!-- Main Workspace (Form & Results) -->
-        <div id="calculatorBody" class="grid grid-cols-1 lg:grid-cols-12 gap-6 opacity-50 pointer-events-none transition-all duration-300">
-
-            <!-- Left Column: Form Inputs -->
-            <div class="lg:col-span-7 bg-white rounded-3xl p-6 shadow-md border border-purple-100 space-y-6">
-                
-                <!-- 1. Species Selection -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-semibold text-gray-700">1. เลือกชนิดสัตว์เลี้ยง</label>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button type="button" id="btnCat" onclick="setSpecies('cat')" 
-                            class="species-btn active-cat py-3 px-4 rounded-2xl border text-sm font-bold flex items-center justify-center gap-2 transition duration-200">
-                            <i class="fa-solid fa-cat text-lg"></i> แมว (Cat)
-                        </button>
-                        <button type="button" id="btnDog" onclick="setSpecies('dog')" 
-                            class="species-btn py-3 px-4 rounded-2xl border border-gray-200 text-gray-600 hover:border-pawtion-dogBlue text-sm font-bold flex items-center justify-center gap-2 transition duration-200">
-                            <i class="fa-solid fa-dog text-lg"></i> สุนัข (Dog)
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 2. Pet Profile (Name, Avatar, Age) -->
-                <div class="space-y-3">
-                    <label class="block text-sm font-semibold text-gray-700">2. ข้อมูลทั่วไปของสัตว์เลี้ยง</label>
-                    
-                    <div class="flex gap-3">
-                        <input type="text" id="petName" value="น้องส้มหยุด" placeholder="ชื่อสัตว์เลี้ยง..." 
-                            class="flex-1 px-4 py-2.5 rounded-2xl border border-purple-100 focus:outline-none focus:ring-2 focus:ring-pawtion-purple/50 text-sm transition">
-                    </div>
-
-                    <!-- Avatars (Dynamic per species) -->
-                    <div id="avatarContainer" class="flex justify-between items-center gap-2 pt-1">
-                        <!-- JS inserted avatars -->
-                    </div>
-
-                    <!-- Age Input (Years & Months) -->
-                    <div class="grid grid-cols-2 gap-3 pt-1">
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">อายุ (ปี)</label>
-                            <input type="number" id="petAgeYears" min="0" max="30" value="2" 
-                                class="w-full px-3 py-2 rounded-xl border border-purple-100 focus:outline-none focus:ring-2 focus:ring-pawtion-purple/50 text-sm font-semibold"
-                                oninput="calculatePawtion()">
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">อายุ (เดือน)</label>
-                            <input type="number" id="petAgeMonths" min="0" max="11" value="6" 
-                                class="w-full px-3 py-2 rounded-xl border border-purple-100 focus:outline-none focus:ring-2 focus:ring-pawtion-purple/50 text-sm font-semibold"
-                                oninput="calculatePawtion()">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. Weight & Life Stage -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- Weight Input -->
-                    <div class="space-y-1.5">
-                        <label for="petWeight" class="block text-sm font-semibold text-gray-700">
-                            3. น้ำหนักตัว (kg)
-                        </label>
-                        <div class="relative">
-                            <input type="number" id="petWeight" step="0.1" min="0.2" max="100" value="4.0" 
-                                class="w-full px-4 py-2.5 rounded-2xl border border-purple-100 focus:outline-none focus:ring-2 focus:ring-pawtion-purple/50 text-base font-bold text-pawtion-textDark"
-                                oninput="calculatePawtion()">
-                            <span class="absolute right-4 top-3 text-xs text-gray-400 font-normal">กิโลกรัม</span>
-                        </div>
-                    </div>
-
-                    <!-- Life Stage / Activity Level (Dynamic options) -->
-                    <div class="space-y-1.5">
-                        <label for="lifeStage" class="block text-sm font-semibold text-gray-700">
-                            4. ช่วงวัยและกิจกรรม
-                        </label>
-                        <select id="lifeStage" onchange="calculatePawtion()" 
-                            class="w-full px-3 py-2.5 rounded-2xl border border-purple-100 focus:outline-none focus:ring-2 focus:ring-pawtion-purple/50 bg-white text-xs sm:text-sm">
-                            <!-- JS populate options -->
-                        </select>
-                    </div>
-                </div>
-
-                <!-- 4. Main Food Type & Slider Ratio -->
-                <div class="space-y-3 pt-2 border-t border-purple-50">
-                    <div class="flex justify-between items-center">
-                        <label class="block text-sm font-semibold text-gray-700">
-                            5. จัดสัดส่วนอาหารหลัก (โควต้า 90%)
-                        </label>
-                        <span id="mainRatioDisplay" class="text-xs font-bold text-pawtion-purpleDark">อาหารแห้ง 70% : เปียก 30%</span>
-                    </div>
-
-                    <!-- Slider for Main Dry vs Main Wet -->
-                    <div class="bg-pawtion-purpleLight p-4 rounded-2xl border border-purple-100 space-y-2">
-                        <input type="range" id="dryRatio" min="0" max="100" value="70" step="5" 
-                            class="w-full h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer custom-slider"
-                            oninput="updateRatioDisplay(); calculatePawtion();">
-                        <div class="flex justify-between text-[11px] text-gray-500 font-light">
-                            <span>เน้นอาหารเปียก (100%)</span>
-                            <span>เน้นอาหารแห้ง/เม็ด (100%)</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 5. Caloric Densities Inputs -->
-                <div class="space-y-3">
-                    <div class="flex justify-between items-center">
-                        <label class="block text-sm font-semibold text-gray-700">6. ค่าพลังงานของอาหารที่ใช้</label>
-                        <button type="button" onclick="resetCalorieDefaults()" class="text-xs text-pawtion-purpleDark font-semibold underline hover:text-purple-900">
-                            คืนค่ามาตรฐาน
-                        </button>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <!-- Dry Food Density -->
-                        <div class="space-y-1">
-                            <span class="text-xs text-gray-500">อาหารแห้ง/เม็ด (kcal / 100g)</span>
-                            <input type="number" id="dryCalPer100g" value="380" step="5" min="100" max="600" 
-                                class="w-full px-3 py-2 rounded-xl border border-purple-100 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-pawtion-purple/50"
-                                oninput="calculatePawtion()">
-                        </div>
-
-                        <!-- Wet Food Density -->
-                        <div class="space-y-1">
-                            <span class="text-xs text-gray-500">อาหารเปียก (kcal / 100g)</span>
-                            <input type="number" id="wetCalPer100g" value="90" step="5" min="30" max="300" 
-                                class="w-full px-3 py-2 rounded-xl border border-purple-100 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-pawtion-purple/50"
-                                oninput="calculatePawtion()">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 6. Meals Per Day -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-semibold text-gray-700">7. แบ่งให้อาหารกี่มื้อต่อวัน?</label>
-                    <div class="flex items-center gap-4 text-xs sm:text-sm">
-                        <label class="inline-flex items-center gap-1.5 text-gray-600 cursor-pointer">
-                            <input type="radio" name="mealsPerDay" value="2" checked onchange="calculatePawtion()" class="text-pawtion-purple focus:ring-pawtion-purple"> 2 มื้อ
-                        </label>
-                        <label class="inline-flex items-center gap-1.5 text-gray-600 cursor-pointer">
-                            <input type="radio" name="mealsPerDay" value="3" onchange="calculatePawtion()" class="text-pawtion-purple focus:ring-pawtion-purple"> 3 มื้อ
-                        </label>
-                        <label class="inline-flex items-center gap-1.5 text-gray-600 cursor-pointer">
-                            <input type="radio" name="mealsPerDay" value="4" onchange="calculatePawtion()" class="text-pawtion-purple focus:ring-pawtion-purple"> 4 มื้อ
-                        </label>
-                    </div>
-                </div>
-
+              </div>
+              <div class="text-right">
+                <span class="text-base font-extrabold text-purple-700"><span id="resDryGram">0</span> g</span>
+                <p class="text-[10px] text-slate-400">ต่อวัน</p>
+              </div>
             </div>
 
-            <!-- Right Column: Results Summary -->
-            <div class="lg:col-span-5 space-y-6">
-
-                <div class="bg-gradient-to-b from-white to-purple-50/60 rounded-3xl p-6 shadow-md border border-purple-100 relative space-y-5">
-                    
-                    <!-- Result Card Header -->
-                    <div class="flex items-center justify-between border-b border-purple-100 pb-3">
-                        <div class="flex items-center gap-3">
-                            <span id="resAvatar" class="text-3xl">🐱</span>
-                            <div>
-                                <h3 id="resPetName" class="font-bold text-lg text-pawtion-textDark">น้องส้มหยุด</h3>
-                                <p class="text-xs text-gray-500" id="resSummarySubtitle">แมว • อายุ 2 ปี 6 เดือน • 4.0 kg</p>
-                            </div>
-                        </div>
-                        <span id="speciesBadge" class="bg-purple-100 text-pawtion-purpleDark font-bold text-xs px-2.5 py-1 rounded-full">
-                            🐱 แมว
-                        </span>
-                    </div>
-
-                    <!-- Total Calorie Box -->
-                    <div class="bg-gradient-to-br from-pawtion-purpleLight to-white p-4 rounded-2xl shadow-sm border border-purple-100 text-center space-y-1">
-                        <span class="text-xs text-gray-500 font-medium uppercase tracking-wide">พลังงานรวมที่ต้องการต่อวัน (DER)</span>
-                        <div class="flex items-baseline justify-center gap-1">
-                            <span id="totalCalories" class="text-4xl font-extrabold text-pawtion-purpleDark">0</span>
-                            <span class="text-xs font-semibold text-gray-500">kcal/วัน</span>
-                        </div>
-                        <div class="text-[11px] text-gray-400 pt-0.5" id="rerFormulaDetail">
-                            (RER: 0 kcal)
-                        </div>
-                    </div>
-
-                    <!-- 90 / 10 Calorie Split Breakdown -->
-                    <div class="space-y-3">
-                        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center justify-between">
-                            <span>สัดส่วนโภชนาการ (90 / 10 Rule)</span>
-                        </h4>
-
-                        <!-- 90% Main Food Breakdown -->
-                        <div class="bg-white p-3.5 rounded-2xl border border-purple-100 space-y-2">
-                            <div class="flex justify-between items-center border-b border-purple-50 pb-2">
-                                <span class="text-xs font-bold text-pawtion-textDark flex items-center gap-1.5">
-                                    <i class="fa-solid fa-bowl-food text-pawtion-purple"></i> อาหารหลัก (90%)
-                                </span>
-                                <span id="mainCalTarget" class="text-xs font-bold text-pawtion-purpleDark">0 kcal</span>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-2 pt-1 text-xs">
-                                <!-- Dry portion -->
-                                <div class="bg-pawtion-yellowLight p-2.5 rounded-xl border border-pawtion-yellowBorder">
-                                    <div class="text-[11px] text-gray-600">อาหารแห้ง/เม็ด</div>
-                                    <div class="font-bold text-sm text-amber-900 mt-0.5">
-                                        <span id="dryGramsDay">0</span> <span class="text-[10px] font-normal text-gray-500">g/วัน</span>
-                                    </div>
-                                </div>
-                                <!-- Wet portion -->
-                                <div class="bg-pawtion-purpleLight p-2.5 rounded-xl border border-purple-100">
-                                    <div class="text-[11px] text-gray-600">อาหารเปียก</div>
-                                    <div class="font-bold text-sm text-pawtion-purpleDark mt-0.5">
-                                        <span id="wetGramsDay">0</span> <span class="text-[10px] font-normal text-gray-500">g/วัน</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 10% Treat Cap -->
-                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-3.5 rounded-2xl border border-purple-100 flex items-center justify-between">
-                            <div class="flex items-center gap-2.5">
-                                <div class="w-8 h-8 rounded-xl bg-pawtion-yellow text-pawtion-textDark flex items-center justify-center text-sm shadow-sm font-bold">
-                                    <i class="fa-solid fa-cookie"></i>
-                                </div>
-                                <div>
-                                    <div class="text-xs font-bold text-purple-900">โควต้าขนม/ทรีต (สูงสุด 10%)</div>
-                                    <div class="text-[10px] text-purple-600">ไม่ควรให้เกินพลังงานส่วนนี้</div>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <span id="treatCalTarget" class="text-base font-extrabold text-pawtion-purpleDark">0</span>
-                                <span class="text-[10px] text-gray-500 block">kcal/วัน</span>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- Daily Schedule Plan -->
-                    <div class="bg-pawtion-purpleLight p-4 rounded-2xl border border-purple-100 space-y-2">
-                        <div class="text-xs font-bold text-pawtion-textDark flex items-center justify-between">
-                            <span><i class="fa-regular fa-clock text-pawtion-purple mr-1"></i> แบ่งจ่ายอาหาร (<span id="mealCountText">2</span> มื้อ/วัน)</span>
-                        </div>
-                        <div class="text-xs text-gray-600 space-y-1.5 pt-1" id="mealScheduleList">
-                            <!-- JS Populated Meal Plan -->
-                        </div>
-                    </div>
-
-                    <!-- Water Requirement Target -->
-                    <div class="bg-blue-50/80 p-3 rounded-2xl border border-blue-100 flex items-center gap-3 text-xs text-blue-900">
-                        <i class="fa-solid fa-droplet text-blue-500 text-xl"></i>
-                        <div>
-                            <span class="font-bold">น้ำดื่มแนะนำต่อวัน:</span> ประมาณ <span id="waterReq" class="font-extrabold text-blue-600 text-sm">0</span> มล.
-                            <div class="text-[10px] text-blue-400">เพื่อสุขภาพระบบขับถ่ายและไตที่ดี</div>
-                        </div>
-                    </div>
-
+            <!-- Wet Food Portion -->
+            <div class="flex items-center justify-between p-3.5 bg-yellow-50/80 rounded-2xl border border-yellow-200/70">
+              <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-yellow-100 text-amber-700 rounded-xl">
+                  <i data-lucide="soup" class="w-5 h-5"></i>
                 </div>
-
+                <div>
+                  <p class="font-semibold text-xs text-purple-950">อาหารเปียก</p>
+                  <p class="text-[11px] text-slate-500"><span id="resWetCal">0</span> kcal/วัน</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-base font-extrabold text-amber-600"><span id="resWetGram">0</span> g</span>
+                <p class="text-[10px] text-slate-400">ต่อวัน</p>
+              </div>
             </div>
 
+            <!-- Treats Portion -->
+            <div class="flex items-center justify-between p-3.5 bg-fuchsia-50/60 rounded-2xl border border-fuchsia-100">
+              <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-fuchsia-100 text-fuchsia-700 rounded-xl">
+                  <i data-lucide="gift" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <p class="font-semibold text-xs text-purple-950">ขนม / ของทานเล่น</p>
+                  <p class="text-[11px] text-slate-500">จำกัดไม่เกิน 10%</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-base font-extrabold text-fuchsia-600"><span id="resTreatMaxCal">0</span> kcal</span>
+                <p class="text-[10px] text-slate-400">ต่อวัน</p>
+              </div>
+            </div>
+
+          </div>
         </div>
 
-        <!-- Health Guide & Tip Section -->
-        <section class="bg-white rounded-3xl p-6 shadow-md border border-purple-100 space-y-4">
-            <h3 class="text-base font-bold text-pawtion-textDark flex items-center gap-2 border-b border-purple-100 pb-3">
-                <i class="fa-solid fa-circle-info text-pawtion-purple"></i> ข้อควรรู้เรื่องโภชนาการสำหรับสัตว์เลี้ยงสุขภาพดี
-            </h3>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-600 leading-relaxed">
-                <div class="p-3.5 rounded-2xl bg-pawtion-yellowLight border border-pawtion-yellowBorder space-y-1">
-                    <span class="font-bold text-amber-900">ทำไมต้องคุมขนมไม่เกิน 10%?</span>
-                    <p>ขนมส่วนใหญ่อุดมไปด้วยแป้ง โซเดียม หรือปรุงแต่งรส หากให้เกิน 10% ของพลังงานประจำวัน จะทำให้สัตว์เลี้ยงได้รับสารอาหารหลักไม่ครบถ้วน เสี่ยงต่อภาวะโภชนาการไม่อสมดุลและโรคอ้วน</p>
-                </div>
-
-                <div class="p-3.5 rounded-2xl bg-pawtion-purpleLight border border-purple-100 space-y-1">
-                    <span class="font-bold text-pawtion-purpleDark">การสังเกตน้ำหนักตัว (BCS)</span>
-                    <p>ควรชั่งน้ำหนักสัตว์เลี้ยงเดือนละ 1 ครั้ง ร่วมกับการลูบดูบริเวณลำตัว หากเริ่มคลำหาซี่โครงได้ยาก ควรปรับลดปริมาณอาหารลง 5-10% และเพิ่มกิจกรรมการออกกำลังกาย</p>
-                </div>
+        <!-- Meal Schedule Split -->
+        <div class="bg-white p-5 rounded-3xl shadow-sm border border-purple-100 space-y-3">
+          <h3 class="font-bold text-purple-950 text-sm flex items-center gap-2">
+            <i data-lucide="clock" class="w-4 h-4 text-purple-600"></i> สรุปการแบ่งมื้ออาหาร (<span id="resMealCount">3</span> มื้อ/วัน)
+          </h3>
+          <div class="p-3.5 bg-purple-50/50 rounded-2xl border border-purple-100 text-xs text-slate-600 space-y-1.5">
+            <div class="flex justify-between">
+              <span>อาหารแห้งต่อมื้อ:</span>
+              <b class="text-purple-700"><span id="resDryPerMeal">0</span> g</b>
             </div>
-        </section>
+            <div class="flex justify-between">
+              <span>อาหารเปียกต่อมื้อ:</span>
+              <b class="text-amber-600"><span id="resWetPerMeal">0</span> g</b>
+            </div>
+          </div>
+        </div>
 
-    </main>
+        <!-- Water Needs -->
+        <div class="bg-yellow-50/90 p-4 rounded-3xl border border-yellow-200/80 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-yellow-200/70 text-purple-700 rounded-2xl">
+              <i data-lucide="droplets" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <p class="font-bold text-xs text-purple-950">ปริมาณน้ำดื่มที่ควรได้รับ</p>
+              <p class="text-[11px] text-slate-500">ดูแลระบบทางเดินปัสสาวะและไต</p>
+            </div>
+          </div>
+          <span class="text-sm font-extrabold text-purple-700"><span id="resWater">0</span> ml/วัน</span>
+        </div>
 
-    <!-- Footer -->
-    <footer class="mt-12 text-center text-xs text-purple-400 space-y-1">
-        <p class="font-semibold text-purple-600">Pawtion - Pet Calorie & Portion Calculator</p>
-        <p class="text-[11px]">คำนวณตามมาตรฐานโภชนาการสัตว์เลี้ยง (AAFCO / WSAVA Guidelines)</p>
-    </footer>
+      </div>
 
-    <!-- App Logic -->
-    <script>
-        let currentSpecies = 'cat'; // 'cat' or 'dog'
-        let selectedAvatar = '🐱';
+    </div>
 
-        const catAvatars = ['🐱', '🐈', '🐈‍⬛', '🦁', '🐯'];
-        const dogAvatars = ['🐶', '🐕', '🦮', '🐩', '🐕‍🦺'];
+  </main>
 
-        const lifeStagesData = {
-            cat: [
-                { text: 'ลูกแมว (อายุ < 4 เดือน)', factor: 2.5 },
-                { text: 'ลูกแมวกำลังโต (4 - 12 เดือน)', factor: 2.0 },
-                { text: 'แมวโตเต็มวัย (ทำหมันแล้ว)', factor: 1.2, default: true },
-                { text: 'แมวโตเต็มวัย (ยังไม่ทำหมัน)', factor: 1.4 },
-                { text: 'แมวเริ่มอ้วน / กิจกรรมน้อย', factor: 1.0 },
-                { text: 'แมวลดน้ำหนัก (คุมอาหาร)', factor: 0.8 },
-                { text: 'แมวสูงวัย (7 ปีขึ้นไป)', factor: 1.1 },
-                { text: 'แมวตั้งท้อง / ให้นม', factor: 2.2 }
-            ],
-            dog: [
-                { text: 'ลูกสุนัข (อายุ < 4 เดือน)', factor: 3.0 },
-                { text: 'ลูกสุนัขกำลังโต (4 - 12 เดือน)', factor: 2.0 },
-                { text: 'สุนัขโตเต็มวัย (ทำหมันแล้ว)', factor: 1.6, default: true },
-                { text: 'สุนัขโตเต็มวัย (ยังไม่ทำหมัน)', factor: 1.8 },
-                { text: 'สุนัขกิจกรรมสูง / ออกกำลังกายเยอะ', factor: 2.0 },
-                { text: 'สุนัขกิจกรรมน้อย / แนวโน้มอ้วนง่าย', factor: 1.2 },
-                { text: 'สุนัขลดน้ำหนัก (คุมอาหาร)', factor: 1.0 },
-                { text: 'สุนัขสูงวัย (7 ปีขึ้นไป)', factor: 1.4 },
-                { text: 'สุนัขตั้งท้อง / ให้นม', factor: 3.0 }
-            ]
-        };
+  <script>
+    lucide.createIcons();
 
-        // Enable / Disable Form based on Health Confirmation
-        function toggleHealthConfirmation() {
-            const isChecked = document.getElementById('healthConfirm').checked;
-            const calcBody = document.getElementById('calculatorBody');
-            const warningText = document.getElementById('healthWarning');
+    let currentSpecies = 'cat';
 
-            if (isChecked) {
-                calcBody.classList.remove('opacity-50', 'pointer-events-none');
-                warningText.classList.add('hidden');
-                calculatePawtion();
-            } else {
-                calcBody.classList.add('opacity-50', 'pointer-events-none');
-                warningText.classList.remove('hidden');
-            }
-        }
+    const catStages = [
+      { id: 'cat_kitten', label: 'ลูกแมว (อายุต่ำกว่า 1 ปี) [DER = 2.5 x RER]', factor: 2.5 },
+      { id: 'cat_neutered', label: 'แมวโตทำหมันแล้ว (กิจกรรมปกติ) [DER = 1.2 x RER]', factor: 1.2 },
+      { id: 'cat_intact', label: 'แมวโตยังไม่ทำหมัน [DER = 1.4 x RER]', factor: 1.4 },
+      { id: 'cat_weight_loss', label: 'แมวโตลดน้ำหนัก / กิจกรรมน้อย [DER = 1.0 x RER]', factor: 1.0 },
+      { id: 'cat_senior', label: 'แมวสูงวัย (7 ปีขึ้นไป) [DER = 1.1 x RER]', factor: 1.1 },
+      { id: 'cat_pregnant', label: 'แมวตั้งท้อง / ให้นมลูก [DER = 2.0 x RER]', factor: 2.0 }
+    ];
 
-        // Species Switcher (Cat vs Dog)
-        function setSpecies(species) {
-            currentSpecies = species;
-            const btnCat = document.getElementById('btnCat');
-            const btnDog = document.getElementById('btnDog');
-            const brandLogoBg = document.getElementById('brandLogoBg');
-            const brandLogoIcon = document.getElementById('brandLogoIcon');
-            const heroBanner = document.getElementById('heroBanner');
-            const bannerBgIcon = document.getElementById('bannerBgIcon');
-            const speciesBadge = document.getElementById('speciesBadge');
+    const dogStages = [
+      { id: 'dog_puppy_4m', label: 'ลูกสุนัข (อายุต่ำกว่า 4 เดือน) [DER = 3.0 x RER]', factor: 3.0 },
+      { id: 'dog_puppy_4m_plus', label: 'ลูกสุนัข (อายุ 4 เดือน - 1 ปี) [DER = 2.0 x RER]', factor: 2.0 },
+      { id: 'dog_neutered', label: 'สุนัขโตทำหมันแล้ว [DER = 1.6 x RER]', factor: 1.6 },
+      { id: 'dog_intact', label: 'สุนัขโตยังไม่ทำหมัน [DER = 1.8 x RER]', factor: 1.8 },
+      { id: 'dog_active', label: 'สุนัขแอคทีฟ / ออกกำลังกายเยอะ [DER = 2.0 x RER]', factor: 2.0 },
+      { id: 'dog_weight_loss', label: 'สุนัขลดน้ำหนัก [DER = 1.0 x RER]', factor: 1.0 },
+      { id: 'dog_senior', label: 'สุนัขสูงวัย [DER = 1.2 x RER]', factor: 1.2 }
+    ];
 
-            if (species === 'cat') {
-                btnCat.className = 'species-btn active-cat py-3 px-4 rounded-2xl border text-sm font-bold flex items-center justify-center gap-2 transition duration-200';
-                btnDog.className = 'species-btn py-3 px-4 rounded-2xl border border-gray-200 text-gray-600 hover:border-pawtion-dogBlue text-sm font-bold flex items-center justify-center gap-2 transition duration-200';
-                
-                brandLogoBg.className = 'w-10 h-10 rounded-2xl bg-pawtion-purple flex items-center justify-center text-white text-xl shadow-md transition-colors duration-300';
-                brandLogoIcon.className = 'fa-solid fa-cat text-pawtion-yellow';
+    function updatePetNameDisplay() {
+      const name = document.getElementById('petName').value.trim() || 'สัตว์เลี้ยงของคุณ';
+      document.getElementById('lockPetName').textContent = name;
+      document.getElementById('resPetName').textContent = name;
+    }
 
-                heroBanner.className = 'bg-gradient-to-r from-pawtion-purple to-purple-400 text-white rounded-3xl p-6 shadow-lg relative overflow-hidden transition-all duration-300';
-                bannerBgIcon.className = 'fa-solid fa-cat';
+    function selectSpecies(species) {
+      currentSpecies = species;
+      const btnCat = document.getElementById('btnCat');
+      const btnDog = document.getElementById('btnDog');
 
-                speciesBadge.className = 'bg-purple-100 text-pawtion-purpleDark font-bold text-xs px-2.5 py-1 rounded-full';
-                speciesBadge.innerHTML = '🐱 แมว';
+      if (species === 'cat') {
+        btnCat.className = 'py-2.5 px-4 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition tab-active';
+        btnDog.className = 'py-2.5 px-4 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition text-purple-700 hover:bg-purple-100/60';
+      } else {
+        btnDog.className = 'py-2.5 px-4 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition tab-active';
+        btnCat.className = 'py-2.5 px-4 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition text-purple-700 hover:bg-purple-100/60';
+      }
 
-                document.getElementById('petName').value = 'น้องส้มหยุด';
-            } else {
-                btnDog.className = 'species-btn active-dog py-3 px-4 rounded-2xl border text-sm font-bold flex items-center justify-center gap-2 transition duration-200';
-                btnCat.className = 'species-btn py-3 px-4 rounded-2xl border border-gray-200 text-gray-600 hover:border-pawtion-purple text-sm font-bold flex items-center justify-center gap-2 transition duration-200';
-                
-                brandLogoBg.className = 'w-10 h-10 rounded-2xl bg-pawtion-dogBlue flex items-center justify-center text-white text-xl shadow-md transition-colors duration-300';
-                brandLogoIcon.className = 'fa-solid fa-dog text-pawtion-yellow';
+      populateStages();
+      calculatePortion();
+    }
 
-                heroBanner.className = 'bg-gradient-to-r from-blue-500 to-indigo-400 text-white rounded-3xl p-6 shadow-lg relative overflow-hidden transition-all duration-300';
-                bannerBgIcon.className = 'fa-solid fa-dog';
+    function populateStages() {
+      const stageSelect = document.getElementById('petStage');
+      stageSelect.innerHTML = '';
+      const list = currentSpecies === 'cat' ? catStages : dogStages;
 
-                speciesBadge.className = 'bg-blue-100 text-pawtion-dogBlue font-bold text-xs px-2.5 py-1 rounded-full';
-                speciesBadge.innerHTML = '🐶 สุนัข';
+      list.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.factor;
+        opt.textContent = item.label;
+        stageSelect.appendChild(opt);
+      });
+    }
 
-                document.getElementById('petName').value = 'น้องโกลเด้น';
-            }
+    function updateFoodRatioLabel() {
+      const dryVal = document.getElementById('mainFoodRatio').value;
+      const wetVal = 100 - dryVal;
+      document.getElementById('dryRatioVal').textContent = dryVal + '%';
+      document.getElementById('wetRatioVal').textContent = wetVal + '%';
+    }
 
-            renderAvatars();
-            renderLifeStages();
-            calculatePawtion();
-        }
+    function calculatePortion() {
+      const isConfirmed = document.getElementById('healthConfirmed').checked;
+      const notice = document.getElementById('unconfirmedNotice');
+      const resultCard = document.getElementById('resultCard');
 
-        // Render Avatar Options
-        function renderAvatars() {
-            const container = document.getElementById('avatarContainer');
-            container.innerHTML = '';
-            const avatars = currentSpecies === 'cat' ? catAvatars : dogAvatars;
-            selectedAvatar = avatars[0];
+      if (!isConfirmed) {
+        notice.classList.remove('hidden');
+        resultCard.classList.add('hidden');
+        return;
+      } else {
+        notice.classList.add('hidden');
+        resultCard.classList.remove('hidden');
+      }
 
-            avatars.forEach((emoji, index) => {
-                const div = document.createElement('div');
-                div.className = `avatar-option cursor-pointer w-11 h-11 rounded-2xl border-2 border-transparent flex items-center justify-center text-2xl transition bg-purple-50/50 ${index === 0 ? 'selected' : ''}`;
-                div.textContent = emoji;
-                div.onclick = function() {
-                    document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
-                    div.classList.add('selected');
-                    selectedAvatar = emoji;
-                    document.getElementById('resAvatar').textContent = selectedAvatar;
-                };
-                container.appendChild(div);
-            });
-            document.getElementById('resAvatar').textContent = selectedAvatar;
-        }
+      const weight = parseFloat(document.getElementById('petWeight').value) || 0;
+      if (weight <= 0) return;
 
-        // Render Life Stage Options
-        function renderLifeStages() {
-            const select = document.getElementById('lifeStage');
-            select.innerHTML = '';
-            const options = lifeStagesData[currentSpecies];
+      const factor = parseFloat(document.getElementById('petStage').value) || 1.2;
+      
+      // RER = 70 * (weight ^ 0.75)
+      const rer = 70 * Math.pow(weight, 0.75);
+      const der = rer * factor;
 
-            options.forEach(opt => {
-                const optionEl = document.createElement('option');
-                optionEl.value = opt.factor;
-                optionEl.textContent = `${opt.text} (x${opt.factor})`;
-                if (opt.default) optionEl.selected = true;
-                select.appendChild(optionEl);
-            });
-        }
+      // 90% Main Food, 10% Treats
+      const mainFoodCal = der * 0.90;
+      const treatCal = der * 0.10;
 
-        // Update Slider Ratio Display
-        function updateRatioDisplay() {
-            const val = document.getElementById('dryRatio').value;
-            document.getElementById('mainRatioDisplay').textContent = `อาหารแห้ง ${val}% : อาหารเปียก ${100 - val}%`;
-        }
+      // Main Food Ratio Split (Dry vs Wet)
+      const dryRatioPct = parseFloat(document.getElementById('mainFoodRatio').value) / 100;
+      const wetRatioPct = 1 - dryRatioPct;
 
-        // Reset Default Calorie Densities
-        function resetCalorieDefaults() {
-            if (currentSpecies === 'cat') {
-                document.getElementById('dryCalPer100g').value = 380;
-                document.getElementById('wetCalPer100g').value = 90;
-            } else {
-                document.getElementById('dryCalPer100g').value = 360;
-                document.getElementById('wetCalPer100g').value = 110;
-            }
-            calculatePawtion();
-        }
+      const dryCalTarget = mainFoodCal * dryRatioPct;
+      const wetCalTarget = mainFoodCal * wetRatioPct;
 
-        // Core Pawtion Calculation Logic
-        function calculatePawtion() {
-            if (!document.getElementById('healthConfirm').checked) return;
+      // Densities
+      const dryDensity = parseFloat(document.getElementById('dryCal').value) || 3.8;
+      const wetDensity = parseFloat(document.getElementById('wetCal').value) || 0.85;
 
-            // Inputs
-            const name = document.getElementById('petName').value.trim() || 'สัตว์เลี้ยง';
-            const weight = parseFloat(document.getElementById('petWeight').value) || 0;
-            const years = parseInt(document.getElementById('petAgeYears').value) || 0;
-            const months = parseInt(document.getElementById('petAgeMonths').value) || 0;
-            const factor = parseFloat(document.getElementById('lifeStage').value) || 1.2;
-            const dryCalPer100g = parseFloat(document.getElementById('dryCalPer100g').value) || 380;
-            const wetCalPer100g = parseFloat(document.getElementById('wetCalPer100g').value) || 90;
-            const dryRatioVal = parseFloat(document.getElementById('dryRatio').value) / 100;
-            const mealsPerDay = parseInt(document.querySelector('input[name="mealsPerDay"]:checked').value) || 2;
+      const dryGrams = dryCalTarget / dryDensity;
+      const wetGrams = wetCalTarget / wetDensity;
 
-            // Update Summary Name & Age
-            document.getElementById('resPetName').textContent = name;
-            const speciesText = currentSpecies === 'cat' ? 'แมว' : 'สุนัข';
-            document.getElementById('resSummarySubtitle').textContent = `${speciesText} • อายุ ${years} ปี ${months} เดือน • ${weight.toFixed(1)} kg`;
+      // Meals
+      const meals = parseInt(document.getElementById('mealsPerDay').value) || 3;
+      const dryPerMeal = dryGrams / meals;
+      const wetPerMeal = wetGrams / meals;
 
-            if (weight <= 0) {
-                document.getElementById('totalCalories').textContent = '0';
-                return;
-            }
+      // Water intake estimation
+      const waterFactor = currentSpecies === 'cat' ? 50 : 60;
+      const waterMl = weight * waterFactor;
 
-            // 1. RER Calculation
-            // Cat & Dog Standard RER formula: 70 * (Weight ^ 0.75)
-            const rer = 70 * Math.pow(weight, 0.75);
-            
-            // 2. DER Calculation (Total Daily Calories)
-            const der = rer * factor;
+      // Render UI
+      document.getElementById('resRER').textContent = Math.round(rer);
+      document.getElementById('resDER').textContent = Math.round(der);
+      document.getElementById('resMainCal').textContent = Math.round(mainFoodCal);
+      document.getElementById('resTreatCal').textContent = Math.round(treatCal);
 
-            document.getElementById('totalCalories').textContent = Math.round(der);
-            document.getElementById('rerFormulaDetail').textContent = `(RER: ${Math.round(rer)} kcal × ตัวคูณ ${factor})`;
+      document.getElementById('resDryCal').textContent = Math.round(dryCalTarget);
+      document.getElementById('resDryGram').textContent = dryGrams.toFixed(1);
 
-            // 3. 90/10 Rule Split
-            const mainFoodCalTarget = der * 0.90; // 90%
-            const treatCalTarget = der * 0.10;    // 10% max
+      document.getElementById('resWetCal').textContent = Math.round(wetCalTarget);
+      document.getElementById('resWetGram').textContent = wetGrams.toFixed(1);
 
-            document.getElementById('mainCalTarget').textContent = `${Math.round(mainFoodCalTarget)} kcal`;
-            document.getElementById('treatCalTarget').textContent = Math.round(treatCalTarget);
+      document.getElementById('resTreatMaxCal').textContent = Math.round(treatCal);
 
-            // 4. Split Main Food into Dry & Wet based on slider
-            const dryCalorieQuota = mainFoodCalTarget * dryRatioVal;
-            const wetCalorieQuota = mainFoodCalTarget * (1 - dryRatioVal);
+      document.getElementById('resMealCount').textContent = meals;
+      document.getElementById('resDryPerMeal').textContent = dryPerMeal.toFixed(1);
+      document.getElementById('resWetPerMeal').textContent = wetPerMeal.toFixed(1);
 
-            // Convert to Grams
-            const dryGramsDay = (dryCalorieQuota / dryCalPer100g) * 100;
-            const wetGramsDay = (wetCalorieQuota / wetCalPer100g) * 100;
+      document.getElementById('resWater').textContent = Math.round(waterMl);
+    }
 
-            document.getElementById('dryGramsDay').textContent = Math.round(dryGramsDay);
-            document.getElementById('wetGramsDay').textContent = Math.round(wetGramsDay);
-
-            // 5. Water Requirement Target
-            // Standard: Cats ~ 50-60ml/kg, Dogs ~ 60-70ml/kg
-            const waterMultiplier = currentSpecies === 'cat' ? 55 : 65;
-            document.getElementById('waterReq').textContent = Math.round(weight * waterMultiplier);
-
-            // 6. Meal Schedule Plan Breakdown
-            document.getElementById('mealCountText').textContent = mealsPerDay;
-            const scheduleList = document.getElementById('mealScheduleList');
-            scheduleList.innerHTML = '';
-
-            const dryPerMeal = Math.round(dryGramsDay / mealsPerDay);
-            const wetPerMeal = Math.round(wetGramsDay / mealsPerDay);
-
-            const mealNames = mealsPerDay === 2 ? ['มื้อเช้า', 'มื้อเย็น'] :
-                              mealsPerDay === 3 ? ['มื้อเช้า', 'มื้อกลางวัน', 'มื้อเย็น'] :
-                              ['มื้อเช้า', 'มื้อกลางวัน', 'มื้อเย็น', 'มื้อก่อนนอน'];
-
-            for (let i = 0; i < mealsPerDay; i++) {
-                let parts = [];
-                if (dryPerMeal > 0) parts.push(`อาหารแห้ง <span class="font-bold text-amber-900">${dryPerMeal}g</span>`);
-                if (wetPerMeal > 0) parts.push(`อาหารเปียก <span class="font-bold text-pawtion-purpleDark">${wetPerMeal}g</span>`);
-
-                const item = document.createElement('div');
-                item.className = 'flex justify-between items-center border-b border-purple-100/60 pb-1 last:border-0';
-                item.innerHTML = `
-                    <span class="font-medium text-gray-700">${mealNames[i] || `มื้อที่ ${i+1}`}</span>
-                    <span>${parts.join(' + ') || '0g'}</span>
-                `;
-                scheduleList.appendChild(item);
-            }
-        }
-
-        // Initialize App
-        window.onload = function() {
-            renderAvatars();
-            renderLifeStages();
-            updateRatioDisplay();
-        };
-    </script>
+    // Initial setup
+    populateStages();
+    updatePetNameDisplay();
+    calculatePortion();
+  </script>
 </body>
 </html>
