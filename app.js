@@ -1,7 +1,14 @@
 // Initialize Lucide Icons
 lucide.createIcons();
 
-const STORAGE_KEY = 'pawtion_pet_profile_v1';
+const STORAGE_KEY_MULTI = 'pawtion_multi_pets_v2';
+const STORAGE_KEY_LEGACY = 'pawtion_pet_profile_v1';
+
+let petStore = {
+  activeId: null,
+  pets: []
+};
+
 let currentSpecies = 'cat';
 let lastAgeMonths = null;
 
@@ -25,77 +32,414 @@ const dogStages = [
   { id: 'dog_senior', label: 'สุนัขสูงวัย [DER = 1.2 x RER]', factor: 1.2 }
 ];
 
-// Save current form state to LocalStorage
-function saveToLocalStorage() {
+// Create a default pet profile object
+function createDefaultPet(customName = 'น้องม่อน') {
+  return {
+    id: 'pet_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+    species: 'cat',
+    healthConfirmed: false,
+    petName: customName,
+    petWeight: '4.5',
+    petAgeYears: '2',
+    petAgeMonths: '0',
+    stageId: 'cat_neutered',
+    mainFoodRatio: '70',
+    dryCal: '3.8',
+    wetCal: '0.85',
+    mealsPerDay: '3'
+  };
+}
+
+// Save all pet profiles to LocalStorage
+function saveStore() {
   try {
-    const stageSelect = document.getElementById('petStage');
-    const selectedOption = stageSelect.options[stageSelect.selectedIndex];
-
-    const data = {
-      species: currentSpecies,
-      healthConfirmed: document.getElementById('healthConfirmed').checked,
-      petName: document.getElementById('petName').value,
-      petWeight: document.getElementById('petWeight').value,
-      petAgeYears: document.getElementById('petAgeYears').value,
-      petAgeMonths: document.getElementById('petAgeMonths').value,
-      stageId: selectedOption ? selectedOption.dataset.id : '',
-      mainFoodRatio: document.getElementById('mainFoodRatio').value,
-      dryCal: document.getElementById('dryCal').value,
-      wetCal: document.getElementById('wetCal').value,
-      mealsPerDay: document.getElementById('mealsPerDay').value
-    };
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(STORAGE_KEY_MULTI, JSON.stringify(petStore));
   } catch (e) {
     console.warn('ไม่สามารถบันทึกข้อมูลลง LocalStorage ได้:', e);
   }
 }
 
-// Load saved form state from LocalStorage
-function loadFromLocalStorage() {
+// Load store from LocalStorage (with automatic migration from v1)
+function initPetStore() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return false;
-
-    const data = JSON.parse(raw);
-
-    if (data.species === 'dog' || data.species === 'cat') {
-      currentSpecies = data.species;
-    }
-
-    if (typeof data.healthConfirmed === 'boolean') {
-      document.getElementById('healthConfirmed').checked = data.healthConfirmed;
-    }
-    if (data.petName !== undefined) document.getElementById('petName').value = data.petName;
-    if (data.petWeight !== undefined) document.getElementById('petWeight').value = data.petWeight;
-    if (data.petAgeYears !== undefined) document.getElementById('petAgeYears').value = data.petAgeYears;
-    if (data.petAgeMonths !== undefined) document.getElementById('petAgeMonths').value = data.petAgeMonths;
-    if (data.mainFoodRatio !== undefined) document.getElementById('mainFoodRatio').value = data.mainFoodRatio;
-    if (data.dryCal !== undefined) document.getElementById('dryCal').value = data.dryCal;
-    if (data.wetCal !== undefined) document.getElementById('wetCal').value = data.wetCal;
-    if (data.mealsPerDay !== undefined) document.getElementById('mealsPerDay').value = data.mealsPerDay;
-
-    // อัปเดต UI ปุ่มชนิดสัตว์และ Dropdown ช่วงวัย
-    updateSpeciesButtonsUI();
-    populateStages();
-
-    // ตั้งค่าช่วงวัยที่เคยบันทึกไว้ (ถ้ามี)
-    if (data.stageId) {
-      const stageSelect = document.getElementById('petStage');
-      const matched = Array.from(stageSelect.options).find(opt => opt.dataset.id === data.stageId);
-      if (matched) {
-        stageSelect.value = matched.value;
+    const rawMulti = localStorage.getItem(STORAGE_KEY_MULTI);
+    if (rawMulti) {
+      const parsed = JSON.parse(rawMulti);
+      if (parsed && Array.isArray(parsed.pets) && parsed.pets.length > 0) {
+        petStore = parsed;
+        if (!petStore.pets.some(p => p.id === petStore.activeId)) {
+          petStore.activeId = petStore.pets[0].id;
+        }
+        return;
       }
     }
 
-    // บันทึกอายุปัจจุบันไว้ เพื่อไม่ให้ autoSelectStageByAge เขียนทับค่าที่โหลดมา
-    lastAgeMonths = getTotalAgeMonths();
-    updateFoodRatioLabel();
-    return true;
+    // Check legacy single-pet data and migrate
+    const rawLegacy = localStorage.getItem(STORAGE_KEY_LEGACY);
+    if (rawLegacy) {
+      const legacy = JSON.parse(rawLegacy);
+      const migratedPet = {
+        ...createDefaultPet(legacy.petName || 'น้องม่อน'),
+        ...legacy
+      };
+      petStore = {
+        activeId: migratedPet.id,
+        pets: [migratedPet]
+      };
+      saveStore();
+      return;
+    }
   } catch (e) {
     console.warn('ไม่สามารถโหลดข้อมูลจาก LocalStorage ได้:', e);
-    return false;
   }
+
+  // Fallback: Create initial pet profile
+  const initialPet = createDefaultPet('น้องม่อน');
+  petStore = {
+    activeId: initialPet.id,
+    pets: [initialPet]
+  };
+  saveStore();
+}
+
+// Get currently active pet object
+function getActivePet() {
+  return petStore.pets.find(p => p.id === petStore.activeId) || petStore.pets[0];
+}
+
+// Sync current form inputs into the active pet object and save
+function syncCurrentFormToActivePet() {
+  const activePet = getActivePet();
+  if (!activePet) return;
+
+  const stageSelect = document.getElementById('petStage');
+  const selectedOption = stageSelect.options[stageSelect.selectedIndex];
+
+  activePet.species = currentSpecies;
+  activePet.healthConfirmed = document.getElementById('healthConfirmed').checked;
+  activePet.petName = document.getElementById('petName').value;
+  activePet.petWeight = document.getElementById('petWeight').value;
+  activePet.petAgeYears = document.getElementById('petAgeYears').value;
+  activePet.petAgeMonths = document.getElementById('petAgeMonths').value;
+  activePet.stageId = selectedOption ? selectedOption.dataset.id : '';
+  activePet.mainFoodRatio = document.getElementById('mainFoodRatio').value;
+  activePet.dryCal = document.getElementById('dryCal').value;
+  activePet.wetCal = document.getElementById('wetCal').value;
+  activePet.mealsPerDay = document.getElementById('mealsPerDay').value;
+
+  saveStore();
+  renderProfileChips();
+  updateHouseholdSummary();
+}
+
+// Load a specific pet profile into the UI form
+function loadPetIntoForm(petId) {
+  petStore.activeId = petId;
+  saveStore();
+
+  const pet = getActivePet();
+  if (!pet) return;
+
+  currentSpecies = pet.species === 'dog' ? 'dog' : 'cat';
+  document.getElementById('healthConfirmed').checked = !!pet.healthConfirmed;
+  document.getElementById('petName').value = pet.petName ?? '';
+  document.getElementById('petWeight').value = pet.petWeight ?? '4.5';
+  document.getElementById('petAgeYears').value = pet.petAgeYears ?? '1';
+  document.getElementById('petAgeMonths').value = pet.petAgeMonths ?? '0';
+  document.getElementById('mainFoodRatio').value = pet.mainFoodRatio ?? '70';
+  document.getElementById('dryCal').value = pet.dryCal ?? '3.8';
+  document.getElementById('wetCal').value = pet.wetCal ?? '0.85';
+  document.getElementById('mealsPerDay').value = pet.mealsPerDay ?? '3';
+
+  updateSpeciesButtonsUI();
+  populateStages();
+
+  if (pet.stageId) {
+    const stageSelect = document.getElementById('petStage');
+    const matched = Array.from(stageSelect.options).find(opt => opt.dataset.id === pet.stageId);
+    if (matched) {
+      stageSelect.value = matched.value;
+    }
+  }
+
+  lastAgeMonths = getTotalAgeMonths();
+  updateFoodRatioLabel();
+  updatePetNameDisplay(false);
+  renderProfileChips();
+  calculatePortion(false);
+  updateHouseholdSummary();
+}
+
+// Add a new pet profile
+function addNewPetProfile() {
+  const nextIndex = petStore.pets.length + 1;
+  const newPet = createDefaultPet(`น้องตัวที่ ${nextIndex}`);
+  petStore.pets.push(newPet);
+  loadPetIntoForm(newPet.id);
+}
+
+// Delete the currently selected pet profile
+function deleteCurrentPetProfile() {
+  if (petStore.pets.length <= 1) return;
+
+  const activePet = getActivePet();
+  const displayName = (activePet.petName || '').trim() || 'สัตว์เลี้ยงตัวนี้';
+  const confirmed = confirm(`ต้องการลบโปรไฟล์ของ "${displayName}" ใช่หรือไม่?`);
+  if (!confirmed) return;
+
+  petStore.pets = petStore.pets.filter(p => p.id !== activePet.id);
+  const nextPet = petStore.pets[0];
+  loadPetIntoForm(nextPet.id);
+}
+
+// Render the horizontal profile switcher chips
+function renderProfileChips() {
+  const container = document.getElementById('petProfileList');
+  const deleteBtn = document.getElementById('btnDeleteProfile');
+  if (!container) return;
+
+  if (deleteBtn) {
+    if (petStore.pets.length > 1) {
+      deleteBtn.classList.remove('hidden');
+    } else {
+      deleteBtn.classList.add('hidden');
+    }
+  }
+
+  container.innerHTML = '';
+
+  petStore.pets.forEach(pet => {
+    const isActive = pet.id === petStore.activeId;
+    const name = (pet.petName || '').trim() || 'ไม่มีชื่อ';
+    const weight = parseFloat(pet.petWeight);
+    const weightLabel = !isNaN(weight) && weight > 0 ? `${weight} กก.` : '';
+    const iconName = pet.species === 'dog' ? 'dog' : 'cat';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.onclick = () => {
+      if (pet.id !== petStore.activeId) {
+        loadPetIntoForm(pet.id);
+      }
+    };
+
+    if (isActive) {
+      btn.className = 'shrink-0 px-3.5 py-2 rounded-2xl text-xs font-semibold flex items-center gap-2 transition bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-sm shadow-purple-200';
+    } else {
+      btn.className = 'shrink-0 px-3.5 py-2 rounded-2xl text-xs font-medium flex items-center gap-2 transition bg-purple-50/80 text-purple-800 border border-purple-100 hover:bg-purple-100/70';
+    }
+
+    btn.innerHTML = `
+      <i data-lucide="${iconName}" class="w-4 h-4 ${isActive ? 'text-yellow-200' : 'text-purple-600'}"></i>
+      <span>${escapeHTML(name)}</span>
+      ${weightLabel ? `<span class="text-[10px] px-1.5 py-0.5 rounded-full ${isActive ? 'bg-white/20 text-yellow-100' : 'bg-purple-100 text-purple-600'}">${weightLabel}</span>` : ''}
+    `;
+
+    container.appendChild(btn);
+  });
+
+  lucide.createIcons();
+}
+
+// Simple HTML escaper for safe rendering of pet names
+function escapeHTML(str) {
+  return str.replace(/[&<>"']/g, match => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[match]));
+}
+
+// Calculate daily nutrition metrics for any pet profile object
+function calculatePetMetrics(pet) {
+  const weight = parseFloat(pet.petWeight) || 0;
+  if (weight <= 0) {
+    return { rer: 0, der: 0, mainFoodCal: 0, treatCal: 0, dryCal: 0, wetCal: 0, dryGrams: 0, wetGrams: 0, dryPerMeal: 0, wetPerMeal: 0, waterMl: 0 };
+  }
+
+  const stageList = pet.species === 'dog' ? dogStages : catStages;
+  const matchedStage = stageList.find(s => s.id === pet.stageId);
+  const factor = matchedStage ? matchedStage.factor : (pet.species === 'dog' ? 1.6 : 1.2);
+
+  const rer = 70 * Math.pow(weight, 0.75);
+  const der = rer * factor;
+
+  const mainFoodCal = der * 0.90;
+  const treatCal = der * 0.10;
+
+  const dryRatioPct = (parseFloat(pet.mainFoodRatio) ?? 70) / 100;
+  const wetRatioPct = 1 - dryRatioPct;
+
+  const dryCal = mainFoodCal * dryRatioPct;
+  const wetCal = mainFoodCal * wetRatioPct;
+
+  const dryDensity = parseFloat(pet.dryCal) || 3.8;
+  const wetDensity = parseFloat(pet.wetCal) || 0.85;
+
+  const dryGrams = dryCal / dryDensity;
+  const wetGrams = wetCal / wetDensity;
+
+  const meals = parseInt(pet.mealsPerDay) || 3;
+  const dryPerMeal = dryGrams / meals;
+  const wetPerMeal = wetGrams / meals;
+
+  const waterFactor = pet.species === 'cat' ? 50 : 60;
+  const waterMl = weight * waterFactor;
+
+  return {
+    rer,
+    der,
+    mainFoodCal,
+    treatCal,
+    dryCal,
+    wetCal,
+    dryGrams,
+    wetGrams,
+    dryPerMeal,
+    wetPerMeal,
+    waterMl
+  };
+}
+
+// Copy text to clipboard with fallback & visual feedback on button
+function copyTextWithFeedback(text, btnElement) {
+  const showSuccess = () => {
+    if (!btnElement) return;
+    const originalHTML = btnElement.innerHTML;
+    btnElement.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
+    btnElement.classList.add('bg-purple-700');
+    btnElement.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i><span>คัดลอกแล้ว!</span>`;
+    lucide.createIcons();
+
+    setTimeout(() => {
+      btnElement.classList.remove('bg-purple-700');
+      btnElement.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
+      btnElement.innerHTML = originalHTML;
+      lucide.createIcons();
+    }, 2000);
+  };
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(showSuccess).catch(() => {
+      fallbackCopyText(text, showSuccess);
+    });
+  } else {
+    fallbackCopyText(text, showSuccess);
+  }
+}
+
+function fallbackCopyText(text, onSuccess) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  try {
+    document.execCommand('copy');
+    if (onSuccess) onSuccess();
+  } catch (err) {
+    alert('ไม่สามารถคัดลอกอัตโนมัติได้ กรุณาลองใหม่อีกครั้ง');
+  }
+  document.body.removeChild(textarea);
+}
+
+// Copy Single Active Pet Summary formatted for LINE
+function copySinglePetSummary(btnElement) {
+  const pet = getActivePet();
+  if (!pet) return;
+
+  const metrics = calculatePetMetrics(pet);
+  const name = (pet.petName || '').trim() || 'น้อง';
+  const emoji = pet.species === 'dog' ? '🐶' : '🐱';
+  const meals = parseInt(pet.mealsPerDay) || 3;
+
+  const lines = [
+    `${emoji} ตารางอาหารของ "${name}" (${pet.petWeight} กก.)`,
+    `• พลังงานรวม: ${Math.round(metrics.der)} kcal/วัน`,
+    `• แบ่ง ${meals} มื้อ/วัน (ตวงต่อมื้อ):`,
+    `  - อาหารเม็ด: ${metrics.dryPerMeal.toFixed(1)} g (รวม ${metrics.dryGrams.toFixed(1)} g/วัน)`,
+    `  - อาหารเปียก: ${metrics.wetPerMeal.toFixed(1)} g (รวม ${metrics.wetGrams.toFixed(1)} g/วัน)`,
+    `• โควต้าขนม: ไม่เกิน ${Math.round(metrics.treatCal)} kcal/วัน`,
+    `• น้ำดื่มแนะนำ: ~${Math.round(metrics.waterMl)} ml/วัน`
+  ];
+
+  copyTextWithFeedback(lines.join('\n'), btnElement);
+}
+
+// Copy All Confirmed Pets Summary formatted for LINE
+function copyHouseholdSummary(btnElement) {
+  const confirmedPets = petStore.pets.filter(p => p.healthConfirmed && (parseFloat(p.petWeight) || 0) > 0);
+  if (confirmedPets.length === 0) return;
+
+  let sumDry = 0;
+  let sumWet = 0;
+
+  const lines = [`🐾 สรุปปริมาณอาหารเด็กๆ ในบ้าน (${confirmedPets.length} ตัว)`];
+
+  confirmedPets.forEach(pet => {
+    const m = calculatePetMetrics(pet);
+    const name = (pet.petName || '').trim() || 'น้อง';
+    const emoji = pet.species === 'dog' ? '🐶' : '🐱';
+    const meals = parseInt(pet.mealsPerDay) || 3;
+
+    sumDry += m.dryGrams;
+    sumWet += m.wetGrams;
+
+    lines.push(
+      `\n${emoji} ${name} (${meals} มื้อ/วัน)`,
+      `  - ต่อมื้อ: เม็ด ${m.dryPerMeal.toFixed(1)} g | เปียก ${m.wetPerMeal.toFixed(1)} g`,
+      `  - ทั้งวัน: เม็ด ${m.dryGrams.toFixed(1)} g | เปียก ${m.wetGrams.toFixed(1)} g (ขนม ≤ ${Math.round(m.treatCal)} kcal)`
+    );
+  });
+
+  lines.push(
+    `\n📦 ยอดรวมทั้งบ้านต่อวัน:`,
+    `• อาหารเม็ดรวม: ${sumDry.toFixed(1)} g/วัน`,
+    `• อาหารเปียกรวม: ${sumWet.toFixed(1)} g/วัน`
+  );
+
+  copyTextWithFeedback(lines.join('\n'), btnElement);
+}
+
+// Update Household Daily Total Summary Card
+function updateHouseholdSummary() {
+  const card = document.getElementById('householdSummaryCard');
+  if (!card) return;
+
+  const totalPets = petStore.pets.length;
+  const confirmedPets = petStore.pets.filter(p => p.healthConfirmed && (parseFloat(p.petWeight) || 0) > 0);
+
+  if (totalPets <= 1 || confirmedPets.length === 0) {
+    card.classList.add('hidden');
+    return;
+  }
+
+  let sumDryGrams = 0;
+  let sumWetGrams = 0;
+
+  confirmedPets.forEach(pet => {
+    const metrics = calculatePetMetrics(pet);
+    sumDryGrams += metrics.dryGrams;
+    sumWetGrams += metrics.wetGrams;
+  });
+
+  card.classList.remove('hidden');
+
+  document.getElementById('hhConfirmedCount').textContent = confirmedPets.length;
+  document.getElementById('hhTotalCount').textContent = totalPets;
+
+  document.getElementById('hhTotalDryGram').textContent = sumDryGrams.toFixed(1);
+  document.getElementById('hhTotalWetGram').textContent = sumWetGrams.toFixed(1);
+
+  document.getElementById('hhWeekDry').textContent = Math.round(sumDryGrams * 7).toLocaleString();
+  document.getElementById('hhWeekWet').textContent = Math.round(sumWetGrams * 7).toLocaleString();
+
+  document.getElementById('hhMonthDry').textContent = ((sumDryGrams * 30) / 1000).toFixed(2);
+  document.getElementById('hhMonthWet').textContent = ((sumWetGrams * 30) / 1000).toFixed(2);
 }
 
 // Update Species Tab Button Styles
@@ -158,11 +502,13 @@ function autoSelectStageByAge(force = false) {
 }
 
 // Update Pet Name across UI
-function updatePetNameDisplay() {
+function updatePetNameDisplay(shouldSave = true) {
   const name = document.getElementById('petName').value.trim() || 'สัตว์เลี้ยงของคุณ';
   document.getElementById('lockPetName').textContent = name;
   document.getElementById('resPetName').textContent = name;
-  saveToLocalStorage();
+  if (shouldSave) {
+    syncCurrentFormToActivePet();
+  }
 }
 
 // Switch between Cat & Dog
@@ -171,7 +517,7 @@ function selectSpecies(species) {
   updateSpeciesButtonsUI();
   populateStages();
   autoSelectStageByAge(true);
-  calculatePortion();
+  calculatePortion(true);
 }
 
 // Populate Dropdown Options
@@ -197,10 +543,13 @@ function updateFoodRatioLabel() {
   document.getElementById('wetRatioVal').textContent = wetVal + '%';
 }
 
-// Main Calorie & Portion Calculation
-function calculatePortion() {
+// Main Calorie & Portion Calculation for Active Pet
+function calculatePortion(shouldSave = true) {
   autoSelectStageByAge(false);
-  saveToLocalStorage();
+
+  if (shouldSave) {
+    syncCurrentFormToActivePet();
+  }
 
   const isConfirmed = document.getElementById('healthConfirmed').checked;
   const notice = document.getElementById('unconfirmedNotice');
@@ -218,65 +567,31 @@ function calculatePortion() {
   const weight = parseFloat(document.getElementById('petWeight').value) || 0;
   if (weight <= 0) return;
 
-  const factor = parseFloat(document.getElementById('petStage').value) || 1.2;
-  
-  // RER = 70 * (weight ^ 0.75)
-  const rer = 70 * Math.pow(weight, 0.75);
-  const der = rer * factor;
-
-  // 90% Main Food, 10% Treats
-  const mainFoodCal = der * 0.90;
-  const treatCal = der * 0.10;
-
-  // Main Food Ratio Split (Dry vs Wet)
-  const dryRatioPct = parseFloat(document.getElementById('mainFoodRatio').value) / 100;
-  const wetRatioPct = 1 - dryRatioPct;
-
-  const dryCalTarget = mainFoodCal * dryRatioPct;
-  const wetCalTarget = mainFoodCal * wetRatioPct;
-
-  // Densities
-  const dryDensity = parseFloat(document.getElementById('dryCal').value) || 3.8;
-  const wetDensity = parseFloat(document.getElementById('wetCal').value) || 0.85;
-
-  const dryGrams = dryCalTarget / dryDensity;
-  const wetGrams = wetCalTarget / wetDensity;
-
-  // Meals
+  const activePet = getActivePet();
+  const metrics = calculatePetMetrics(activePet);
   const meals = parseInt(document.getElementById('mealsPerDay').value) || 3;
-  const dryPerMeal = dryGrams / meals;
-  const wetPerMeal = wetGrams / meals;
-
-  // Water intake estimation
-  const waterFactor = currentSpecies === 'cat' ? 50 : 60;
-  const waterMl = weight * waterFactor;
 
   // Render UI
-  document.getElementById('resRER').textContent = Math.round(rer);
-  document.getElementById('resDER').textContent = Math.round(der);
-  document.getElementById('resMainCal').textContent = Math.round(mainFoodCal);
-  document.getElementById('resTreatCal').textContent = Math.round(treatCal);
+  document.getElementById('resRER').textContent = Math.round(metrics.rer);
+  document.getElementById('resDER').textContent = Math.round(metrics.der);
+  document.getElementById('resMainCal').textContent = Math.round(metrics.mainFoodCal);
+  document.getElementById('resTreatCal').textContent = Math.round(metrics.treatCal);
 
-  document.getElementById('resDryCal').textContent = Math.round(dryCalTarget);
-  document.getElementById('resDryGram').textContent = dryGrams.toFixed(1);
+  document.getElementById('resDryCal').textContent = Math.round(metrics.dryCal);
+  document.getElementById('resDryGram').textContent = metrics.dryGrams.toFixed(1);
 
-  document.getElementById('resWetCal').textContent = Math.round(wetCalTarget);
-  document.getElementById('resWetGram').textContent = wetGrams.toFixed(1);
+  document.getElementById('resWetCal').textContent = Math.round(metrics.wetCal);
+  document.getElementById('resWetGram').textContent = metrics.wetGrams.toFixed(1);
 
-  document.getElementById('resTreatMaxCal').textContent = Math.round(treatCal);
+  document.getElementById('resTreatMaxCal').textContent = Math.round(metrics.treatCal);
 
   document.getElementById('resMealCount').textContent = meals;
-  document.getElementById('resDryPerMeal').textContent = dryPerMeal.toFixed(1);
-  document.getElementById('resWetPerMeal').textContent = wetPerMeal.toFixed(1);
+  document.getElementById('resDryPerMeal').textContent = metrics.dryPerMeal.toFixed(1);
+  document.getElementById('resWetPerMeal').textContent = metrics.wetPerMeal.toFixed(1);
 
-  document.getElementById('resWater').textContent = Math.round(waterMl);
+  document.getElementById('resWater').textContent = Math.round(metrics.waterMl);
 }
 
 // Initial setup on page load
-const hasSavedData = loadFromLocalStorage();
-if (!hasSavedData) {
-  populateStages();
-  autoSelectStageByAge(true);
-}
-updatePetNameDisplay();
-calculatePortion();
+initPetStore();
+loadPetIntoForm(petStore.activeId);
