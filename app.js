@@ -32,7 +32,86 @@ const dogStages = [
   { id: 'dog_senior', label: 'สุนัขสูงวัย', factor: 1.2 }
 ];
 
-// Create a default pet profile object (including treat proximate analysis defaults)
+// Shared Proximate Analysis Helper (Modified Atwater Factors)
+function calcKcalPerGramFromProximate(protein, fat, fiber, moisture) {
+  const p = Math.max(0, parseFloat(protein) || 0);
+  const f = Math.max(0, parseFloat(fat) || 0);
+  const fb = Math.max(0, parseFloat(fiber) || 0);
+  const m = Math.max(0, parseFloat(moisture) || 0);
+
+  // Estimate Ash (~6% for dry/semi-moist, ~2% for high-moisture wet food > 60%)
+  const ash = m > 60 ? 2 : 6;
+  const nfe = Math.max(0, 100 - (p + f + fb + m + ash));
+
+  // Protein 3.5 kcal/g, Fat 8.5 kcal/g, NFE 3.5 kcal/g
+  const kcalPer100g = (p * 3.5) + (f * 8.5) + (nfe * 3.5);
+  return kcalPer100g / 100;
+}
+
+// Toggle Proximate Analysis helper box for Dry or Wet food
+function toggleProximateBox(type) {
+  const boxId = type === 'dry' ? 'dryProximateBox' : 'wetProximateBox';
+  const box = document.getElementById(boxId);
+  if (!box) return;
+
+  const willOpen = box.classList.contains('hidden');
+  box.classList.toggle('hidden');
+
+  if (willOpen) {
+    updateProximatePreviewOnly(type);
+  }
+}
+
+// Update preview label inside Dry/Wet Proximate box without overwriting manual kcal/g on load
+function updateProximatePreviewOnly(type) {
+  if (type === 'dry') {
+    const kcalPerG = calcKcalPerGramFromProximate(
+      document.getElementById('dryProtein').value,
+      document.getElementById('dryFat').value,
+      document.getElementById('dryFiber').value,
+      document.getElementById('dryMoisture').value
+    );
+    document.getElementById('dryCalcPreview').textContent = kcalPerG.toFixed(2);
+  } else {
+    const kcalPerG = calcKcalPerGramFromProximate(
+      document.getElementById('wetProtein').value,
+      document.getElementById('wetFat').value,
+      document.getElementById('wetFiber').value,
+      document.getElementById('wetMoisture').value
+    );
+    document.getElementById('wetCalcPreview').textContent = kcalPerG.toFixed(2);
+  }
+}
+
+// Calculate from Proximate inputs and apply directly to dryCal or wetCal
+function applyProximateToFood(type) {
+  if (type === 'dry') {
+    const kcalPerG = calcKcalPerGramFromProximate(
+      document.getElementById('dryProtein').value,
+      document.getElementById('dryFat').value,
+      document.getElementById('dryFiber').value,
+      document.getElementById('dryMoisture').value
+    );
+    document.getElementById('dryCalcPreview').textContent = kcalPerG.toFixed(2);
+    if (kcalPerG > 0) {
+      document.getElementById('dryCal').value = kcalPerG.toFixed(2);
+    }
+  } else {
+    const kcalPerG = calcKcalPerGramFromProximate(
+      document.getElementById('wetProtein').value,
+      document.getElementById('wetFat').value,
+      document.getElementById('wetFiber').value,
+      document.getElementById('wetMoisture').value
+    );
+    document.getElementById('wetCalcPreview').textContent = kcalPerG.toFixed(2);
+    if (kcalPerG > 0) {
+      document.getElementById('wetCal').value = kcalPerG.toFixed(2);
+    }
+  }
+  calculatePortion(true);
+}
+
+// Create a default pet profile object
 function createDefaultPet(customName = 'น้องม่อน') {
   return {
     id: 'pet_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
@@ -47,6 +126,14 @@ function createDefaultPet(customName = 'น้องม่อน') {
     dryCal: '3.8',
     wetCal: '0.85',
     mealsPerDay: '3',
+    dryProtein: '32',
+    dryFat: '15',
+    dryFiber: '4',
+    dryMoisture: '10',
+    wetProtein: '10',
+    wetFat: '3',
+    wetFiber: '1',
+    wetMoisture: '82',
     treatProtein: '25',
     treatFat: '10',
     treatFiber: '3',
@@ -133,6 +220,17 @@ function syncCurrentFormToActivePet() {
   activePet.wetCal = document.getElementById('wetCal').value;
   activePet.mealsPerDay = document.getElementById('mealsPerDay').value;
 
+  // Dry & Wet food proximate fields
+  activePet.dryProtein = document.getElementById('dryProtein').value;
+  activePet.dryFat = document.getElementById('dryFat').value;
+  activePet.dryFiber = document.getElementById('dryFiber').value;
+  activePet.dryMoisture = document.getElementById('dryMoisture').value;
+
+  activePet.wetProtein = document.getElementById('wetProtein').value;
+  activePet.wetFat = document.getElementById('wetFat').value;
+  activePet.wetFiber = document.getElementById('wetFiber').value;
+  activePet.wetMoisture = document.getElementById('wetMoisture').value;
+
   // Treat proximate analysis fields
   activePet.treatProtein = document.getElementById('treatProtein').value;
   activePet.treatFat = document.getElementById('treatFat').value;
@@ -165,7 +263,18 @@ function loadPetIntoForm(petId) {
   document.getElementById('wetCal').value = pet.wetCal ?? '0.85';
   document.getElementById('mealsPerDay').value = pet.mealsPerDay ?? '3';
 
-  // Load treat proximate analysis values (fallback to defaults for older saved profiles)
+  // Load Dry & Wet proximate values
+  document.getElementById('dryProtein').value = pet.dryProtein ?? '32';
+  document.getElementById('dryFat').value = pet.dryFat ?? '15';
+  document.getElementById('dryFiber').value = pet.dryFiber ?? '4';
+  document.getElementById('dryMoisture').value = pet.dryMoisture ?? '10';
+
+  document.getElementById('wetProtein').value = pet.wetProtein ?? '10';
+  document.getElementById('wetFat').value = pet.wetFat ?? '3';
+  document.getElementById('wetFiber').value = pet.wetFiber ?? '1';
+  document.getElementById('wetMoisture').value = pet.wetMoisture ?? '82';
+
+  // Load treat proximate analysis values
   document.getElementById('treatProtein').value = pet.treatProtein ?? '25';
   document.getElementById('treatFat').value = pet.treatFat ?? '10';
   document.getElementById('treatFiber').value = pet.treatFiber ?? '3';
@@ -173,6 +282,8 @@ function loadPetIntoForm(petId) {
   document.getElementById('treatBagWeight').value = pet.treatBagWeight ?? '60';
   document.getElementById('treatBagPieces').value = pet.treatBagPieces ?? '30';
 
+  updateProximatePreviewOnly('dry');
+  updateProximatePreviewOnly('wet');
   updateSpeciesButtonsUI();
   populateStages();
 
@@ -274,21 +385,15 @@ function escapeHTML(str) {
   }[match]));
 }
 
-// Calculate Treat Metrics from Proximate Analysis (Modified Atwater Factors)
+// Calculate Treat Metrics from Proximate Analysis
 function calculateTreatMetrics(pet, treatCalQuota) {
-  const protein = Math.max(0, parseFloat(pet.treatProtein) || 0);
-  const fat = Math.max(0, parseFloat(pet.treatFat) || 0);
-  const fiber = Math.max(0, parseFloat(pet.treatFiber) || 0);
-  const moisture = Math.max(0, parseFloat(pet.treatMoisture) || 0);
-
-  // Estimate Ash (~6% for dry/semi-moist treats, ~2% if high moisture > 60%)
-  const ash = moisture > 60 ? 2 : 6;
-  const nfe = Math.max(0, 100 - (protein + fat + fiber + moisture + ash));
-
-  // Modified Atwater: Protein 3.5 kcal/g, Fat 8.5 kcal/g, NFE 3.5 kcal/g
-  const kcalPer100g = (protein * 3.5) + (fat * 8.5) + (nfe * 3.5);
-  const kcalPerGram = kcalPer100g / 100;
-
+  const kcalPerGram = calcKcalPerGramFromProximate(
+    pet.treatProtein,
+    pet.treatFat,
+    pet.treatFiber,
+    pet.treatMoisture
+  );
+  const kcalPer100g = kcalPerGram * 100;
   const maxGrams = kcalPerGram > 0 ? (treatCalQuota / kcalPerGram) : 0;
 
   const bagWeight = parseFloat(pet.treatBagWeight) || 0;
